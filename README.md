@@ -74,11 +74,14 @@ npm install
 npm start
 ```
 
-**Build**
+**Build** *(only if you want to generate a .exe)*
 ```bash
 npm install -g electron-builder
 npm run build
 ```
+
+> 📁 After building, the installer will be generated in the `dist/` folder.
+> Run it and RLVision will be installed and added to your desktop automatically.
 
 ## Security
 > 💡 RLVision only reads data from Rocket League's **official local WebSocket** (localhost:49123).
