@@ -1,0 +1,116 @@
+const { ipcRenderer } = require('electron');
+
+// Request the current state from the main process on startup
+ipcRenderer.send('get-state');
+
+// Refresh the UI whenever the main process pushes a state update
+ipcRenderer.on('state-update', (event, state) => {
+  updateUI(state);
+});
+
+// Update the connection status dot and label in the header
+ipcRenderer.on('rl-connected', (event, connected) => {
+  const dot = document.getElementById('rlDot');
+  const status = document.getElementById('rlStatus');
+  if (connected) {
+    dot.classList.add('on');
+    status.textContent = 'Connected';
+  } else {
+    dot.classList.remove('on');
+    status.textContent = 'Offline';
+  }
+});
+
+// Detected player name received from the main process
+ipcRenderer.on('player-name', (event, name) => {
+  const el = document.getElementById('playerName');
+  if (el) el.textContent = '👤 ' + name;
+});
+
+// MMR source label: 'real' (fetched from rlstats.net), 'fetching', or 'estimated'
+ipcRenderer.on('mmr-source', (event, source) => {
+  const el = document.getElementById('mmrSource');
+  if (!el) return;
+
+  if (source === 'real') {
+    el.textContent = '✅ Real MMR';
+    el.className = 'mmr-source real';
+  } else if (source === 'fetching') {
+    el.textContent = '🔄 Fetching real MMR...';
+    el.className = 'mmr-source fetching';
+  } else {
+    el.textContent = '⚠️ Estimated MMR';
+    el.className = 'mmr-source estimated';
+  }
+});
+
+// Refresh all UI elements with the latest state values
+function updateUI(state) {
+  document.getElementById('mmrBig').textContent = state.mmr;
+  document.getElementById('winsVal').textContent = state.wins;
+  document.getElementById('lossesVal').textContent = state.losses;
+
+  // Calculate win ratio as a percentage, show dash if no games played
+  const total = state.wins + state.losses;
+  const ratio = total > 0 ? Math.round((state.wins / total) * 100) + '%' : '—';
+  document.getElementById('ratioVal').textContent = ratio;
+
+  // Update streak pill appearance based on current streak direction
+  const streakEl = document.getElementById('streakPill');
+  if (state.streak > 0) {
+    streakEl.className = 'streak-pill win-streak';
+    streakEl.textContent = `🔥 ${state.streak} win streak`;
+  } else if (state.streak < 0) {
+    streakEl.className = 'streak-pill loss-streak';
+    streakEl.textContent = `❄️ ${Math.abs(state.streak)} loss streak`;
+  } else {
+    streakEl.className = 'streak-pill neutral';
+    streakEl.textContent = 'No streak';
+  }
+
+  // Keep overlay size inputs in sync with the stored state
+  document.getElementById('widthInput').value = state.overlayWidth;
+  document.getElementById('heightInput').value = state.overlayHeight;
+}
+
+// Send a manually entered MMR value to the main process
+function setMMR() {
+  const val = document.getElementById('mmrInput').value;
+  if (val === '') return;
+  ipcRenderer.send('set-mmr', val);
+  document.getElementById('mmrInput').value = '';
+}
+
+// Trigger a fresh MMR fetch from rlstats.net
+function refreshMMR() {
+  ipcRenderer.send('refresh-mmr');
+}
+
+// Send updated overlay dimensions to the main process
+function applySize() {
+  const width = parseInt(document.getElementById('widthInput').value) || 220;
+  const height = parseInt(document.getElementById('heightInput').value) || 160;
+  ipcRenderer.send('set-overlay-size', { width, height });
+}
+
+
+// MMR gained this session
+const gainedEl = document.getElementById('mmrGainedEl');
+if (gainedEl) {
+  const gained = state.mmrGained || 0;
+  if (gained > 0) {
+    gainedEl.style.color = '#10b981';
+    gainedEl.textContent = `📈 +${gained} this session`;
+  } else if (gained < 0) {
+    gainedEl.style.color = '#ef4444';
+    gainedEl.textContent = `📉 ${gained} this session`;
+  } else {
+    gainedEl.style.color = '#666';
+    gainedEl.textContent = `Δ 0 this session`;
+  }
+}
+
+// Allow pressing Enter to submit a custom MMR value
+document.getElementById('mmrInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') setMMR();
+});

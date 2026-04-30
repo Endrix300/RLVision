@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: transparent;
+      color: #fff;
+      display: flex;
+    }
+
+    /* Container-based scaling */
+    .overlay {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      background: rgba(8, 8, 18, 0.75);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 10px;
+      padding: 10px;
+      gap: 12px;
+      container-type: size;
+      -webkit-app-region: drag;
+    }
+
+    /* ───────── LEFT ───────── */
+    .ov-left {
+      flex: 1.2;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      border-right: 1px solid rgba(255,255,255,0.07);
+      padding-right: 10px;
+    }
+
+    .ov-title {
+      font-size: clamp(8px, 3cqh, 14px);
+      font-weight: 700;
+      background: linear-gradient(135deg, #667eea, #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    .ov-mmr-row {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    /* Big MMR value */
+    .ov-mmr-value {
+      font-size: clamp(28px, 14cqh, 80px);
+      font-weight: 900;
+      line-height: 1;
+      background: linear-gradient(135deg, #667eea, #a78bfa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .ov-mmr-label {
+      font-size: clamp(8px, 3cqh, 14px);
+      color: #666;
+      text-transform: uppercase;
+    }
+
+    /* Gain / loss */
+    .ov-mmr-change {
+      font-size: clamp(10px, 4cqh, 18px);
+      font-weight: 800;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .ov-mmr-change.show { opacity: 1; }
+    .ov-mmr-change.up { color: #10b981; }
+    .ov-mmr-change.down { color: #ef4444; }
+
+    /* ───────── RIGHT ───────── */
+    .ov-right {
+      flex: 1;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    /* Streak */
+    .ov-streak {
+      font-size: clamp(10px, 4cqh, 18px);
+      font-weight: 700;
+    }
+
+    .ov-streak.win { color: #10b981; }
+    .ov-streak.loss { color: #ef4444; }
+    .ov-streak.neutral { color: #555; }
+
+    /* W/L */
+    .ov-wl {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .ov-stat {
+      display: flex;
+      align-items: center;
+    }
+
+    .ov-stat-value {
+      font-size: clamp(14px, 6cqh, 28px);
+      font-weight: 800;
+      display: flex;
+      align-items: center;
+      line-height: 1;
+    }
+
+    .ov-stat-value.w { color: #10b981; }
+    .ov-stat-value.l { color: #ef4444; }
+
+    .ov-stat-label {
+      font-size: clamp(8px, 3cqh, 12px);
+      color: #666;
+    }
+
+    .ov-sep {
+      font-size: clamp(10px, 4cqh, 18px);
+      color: #333;
+    }
+
+    /* Session MMR */
+    .ov-mmr-session {
+      font-size: clamp(10px, 4cqh, 16px);
+      font-weight: 700;
+    }
+
+    .ov-mmr-session.positive { color: #10b981; }
+    .ov-mmr-session.negative { color: #ef4444; }
+    .ov-mmr-session.neutral { color: #666; }
+
+    /* Animation */
+    @keyframes mmrPop {
+      0% { transform: scale(1); }
+      40% { transform: scale(1.12); }
+      100% { transform: scale(1); }
+    }
+
+    .pop { animation: mmrPop 0.4s ease-out; }
+  </style>
+</head>
+<body>
+<div class="overlay">
+
+  <!-- Left panel: MMR value and animated change indicator -->
+  <div class="ov-left">
+    <div class="ov-title">🎮 RLVision</div>
+    <div class="ov-mmr-row">
+      <!-- Large MMR number updated after each match -->
+      <div class="ov-mmr-value" id="ovMMR">0</div>
+      <div class="ov-mmr-label">MMR</div>
+    </div>
+    <!-- Fades in briefly to show +/- MMR delta after a match -->
+    <div class="ov-mmr-change" id="mmrChange">+9</div>
+  </div>
+
+  <!-- Right panel: streak, W/L counters, and session MMR total -->
+  <div class="ov-right">
+    <!-- Win/loss streak with color-coded text (green = win, red = loss) -->
+    <div class="ov-streak neutral" id="ovStreak">— No streak</div>
+    <!-- Wins and losses side by side -->
+    <div class="ov-wl">
+      <div class="ov-stat">
+        <div class="ov-stat-value w" id="ovWins">0</div>
+        <div class="ov-stat-label">✅ W</div>
+      </div>
+      <div class="ov-sep">/</div>
+      <div class="ov-stat">
+        <div class="ov-stat-value l" id="ovLosses">0</div>
+        <div class="ov-stat-label">❌ L</div>
+      </div>
+    </div>
+    <!-- Session MMR delta -->
+    <div class="ov-mmr-session neutral" id="ovMMRSession">Δ 0</div>
+  </div>
+
+</div>
+<script src="overlay-renderer.js"></script>
+</body>
+</html>
