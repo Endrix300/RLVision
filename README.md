@@ -65,10 +65,10 @@ npm run build
 Windows may show a SmartScreen warning — click **More info** → **Run anyway**.
 This is normal for unsigned independent software.
 
-<table border="0" cellspacing="0" cellpadding="0">
+<table border="0" cellspacing="0" cellpadding="0" width="100%">
   <tr>
-    <td><img width="75%" alt="RLVision Overlay" src="https://github.com/user-attachments/assets/71720fb3-4cfd-4e9e-9e8f-5b77ef392df1" /></td>
-    <td><img width="100%" alt="RLVision App" src="https://github.com/user-attachments/assets/355c2790-8287-452c-8a36-b6eb28d42bdd" /></td>
+    <td width="70%"><img width="100%" alt="RLVision Overlay" src="https://github.com/user-attachments/assets/71720fb3-4cfd-4e9e-9e8f-5b77ef392df1" /></td>
+    <td width="30%"><img width="100%" alt="RLVision App" src="https://github.com/user-attachments/assets/355c2790-8287-452c-8a36-b6eb28d42bdd" /></td>
   </tr>
 </table>
 
