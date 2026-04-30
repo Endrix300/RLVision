@@ -58,6 +58,7 @@ PacketSendRate=60.0
 
 **Option 1 — With Git**
 ```bash
+cd "C:\Users\%USERNAME%\Documents" (optional but recommended)
 git clone https://github.com/Endrix300/RLVision.git
 cd RLVision
 npm install
