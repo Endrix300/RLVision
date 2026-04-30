@@ -52,16 +52,32 @@ PacketSendRate=60.0
 
 ### Want to modify or customize the code?
 
+**Prerequisites**
+- [Node.js](https://nodejs.org) (v16 or higher)
+- [Git](https://git-scm.com/download/win) (optional if you are using option 2)
+
+**Option 1 — With Git**
 ```bash
+cd "C:\Users\%USERNAME%\Documents" (optional but recommended)
 git clone https://github.com/Endrix300/RLVision.git
 cd RLVision
 npm install
 npm start
 ```
 
-Build :
-
+**Option 2 — Without Git**
+1. Click the green **"Code"** button on the GitHub repo
+2. Click **"Download ZIP"**
+3. Extract the ZIP anywhere
+4. Open a terminal in the folder and run :
 ```bash
+npm install
+npm start
+```
+
+**Build** *(only if you want to generate a .exe)*
+```bash
+npm install -g electron-builder
 npm run build
 ```
 
