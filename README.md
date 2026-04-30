@@ -74,6 +74,12 @@ npm install
 npm start
 ```
 
+**Build**
+```bash
+npm install -g electron-builder
+npm run build
+```
+
 ## Security
 > 💡 RLVision only reads data from Rocket League's **official local WebSocket** (localhost:49123).
 > It does **not** inject code into the game, does **not** modify game files, and is fully **EAC compatible**.
