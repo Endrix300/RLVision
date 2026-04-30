@@ -1,3 +1,12 @@
+# 🎮 RLVision
+> The first EAC-compatible Rocket League overlay — Real MMR tracking, Win/Loss/Streak, auto-show when RL is focused.
+
+![License](https://img.shields.io/badge/license-MIT-blue)
+![EAC](https://img.shields.io/badge/EAC-Compatible-green)
+![Platform](https://img.shields.io/badge/platform-Windows-lightgrey)
+![Version](https://img.shields.io/badge/version-2.0.0-purple)
+![Free](https://img.shields.io/badge/price-Free-brightgreen)
+
 ## What's new in v2.0.0
 - Real MMR tracking (fetched from rlstats.net after each match)
 - Auto-detected playlist (1v1, 2v2, 3v3)
@@ -42,6 +51,7 @@ PacketSendRate=60.0
 ---
 
 ### Want to modify or customize the code?
+
 ```bash
 git clone https://github.com/Endrix300/RLVision.git
 cd RLVision
@@ -50,9 +60,13 @@ npm start
 ```
 
 Build :
+
 ```bash
 npm run build
 ```
+
+> 📁 After building, the installer will be generated in the `dist/` folder.
+> Run it and RLVision will be installed and added to your desktop automatically.
 
 ## Security
 > 💡 RLVision only reads data from Rocket League's **official local WebSocket** (localhost:49123).
