@@ -243,11 +243,24 @@ function handleRLEvent(message) {
   if (Event === 'UpdateState' && Data && Data.Players) {
     // Detect playlist first based on player count, before fetching MMR
     if (currentPlaylist === null) {
-      const playerCount = Data.Players.length;
-      if (playerCount === 1) currentPlaylist = '1v1';
-      else if (playerCount === 2) currentPlaylist = '2v2';
-      else if (playerCount >= 3) currentPlaylist = '3v3';
-      console.log('🎮 Playlist detected:', currentPlaylist);
+      if (Data.Game && Data.Game.Playlist) {
+        const p = Data.Game.Playlist;
+        // SOS playlist IDs: 10 = Duel, 11 = Doubles, 13 = Standard
+        if (p === 10) currentPlaylist = '1v1';
+        else if (p === 11) currentPlaylist = '2v2';
+        else if (p === 13) currentPlaylist = '3v3';
+        console.log('🎮 Playlist detected via ID:', currentPlaylist, '| Raw:', p);
+      }
+
+      // Fallback: count players on one team only (not total)
+      if (currentPlaylist === null) {
+        const teamPlayers = Data.Players.filter(p => p.TeamNum === 0);
+        const count = teamPlayers.length;
+        if (count === 1) currentPlaylist = '1v1';
+        else if (count === 2) currentPlaylist = '2v2';
+        else if (count >= 3) currentPlaylist = '3v3';
+        console.log('🎮 Playlist detected via team count:', currentPlaylist);
+      }
     }
 
     // Find the local player by their ID, fallback to first player if ID not yet known
@@ -296,7 +309,7 @@ function handleRLEvent(message) {
     // Wait 45s for rlstats.net to update before fetching new MMR
     console.log('⏳ Waiting 45s before fetching real MMR...');
     sendToMain('mmr-source', 'fetching');
-    setTimeout(() => fetchRealMMR(true), 45000); // fromMatch = true
+    setTimeout(() => fetchRealMMR(true), 50000); // fromMatch = true
   }
 }
 
