@@ -52,10 +52,11 @@ PacketSendRate=60.0
 
 ### Want to modify or customize the code?
 
-**Option 1 — With Git** (recommended)
+**Prerequisites**
+- [Node.js](https://nodejs.org) (v16 or higher)
+- [Git](https://git-scm.com/download/win) (optional)
 
-Install Git first : https://git-scm.com/download/win
-
+**Option 1 — With Git**
 ```bash
 git clone https://github.com/Endrix300/RLVision.git
 cd RLVision
@@ -64,25 +65,14 @@ npm start
 ```
 
 **Option 2 — Without Git**
-
 1. Click the green **"Code"** button on the GitHub repo
 2. Click **"Download ZIP"**
 3. Extract the ZIP anywhere
 4. Open a terminal in the folder and run :
-
 ```bash
 npm install
 npm start
 ```
-
-Build :
-
-```bash
-npm run build
-```
-
-> 📁 After building, the installer will be generated in the `dist/` folder.
-> Run it and RLVision will be installed and added to your desktop automatically.
 
 ## Security
 > 💡 RLVision only reads data from Rocket League's **official local WebSocket** (localhost:49123).
