@@ -65,7 +65,7 @@ npm run build
 Windows may show a SmartScreen warning — click **More info** → **Run anyway**.
 This is normal for unsigned independent software.
 
-<img width="1919" height="1079" alt="image" src="https://github.com/user-attachments/assets/71720fb3-4cfd-4e9e-9e8f-5b77ef392df1" />
+<img width="960" height="540" alt="image" src="https://github.com/user-attachments/assets/71720fb3-4cfd-4e9e-9e8f-5b77ef392df1" />
 <img width="471" height="617" alt="image" src="https://github.com/user-attachments/assets/355c2790-8287-452c-8a36-b6eb28d42bdd" />
 
 
