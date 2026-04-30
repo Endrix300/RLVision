@@ -54,7 +54,7 @@ PacketSendRate=60.0
 
 **Prerequisites**
 - [Node.js](https://nodejs.org) (v16 or higher)
-- [Git](https://git-scm.com/download/win) (optional)
+- [Git](https://git-scm.com/download/win) (optional if you are using option 2)
 
 **Option 1 — With Git**
 ```bash
