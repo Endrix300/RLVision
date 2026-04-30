@@ -170,7 +170,7 @@ function startRLDetection() {
   });
 
   ps.stderr.on('data', () => {
-    // Silently ignore PS errors
+    // Silently ignore PowerShell errors
   });
 }
 
@@ -233,22 +233,16 @@ function startReconnect() {
 function handleRLEvent(message) {
   const { Event, Data } = message;
 
+  // Reset match state on new game
   if (Event === 'MatchCreated' || Event === 'MatchInitialized') {
     matchEnded = false;
     myTeamNum = null;
     currentPlaylist = null;
   }
 
-  if (Event === 'UpdateState' && Data && Data.Players && Data.Players[0]) {
-    const player = Data.Players[0];
-
-    if (myTeamNum === null) {
-      myTeamNum = player.TeamNum;
-      console.log('👤 Team detected:', myTeamNum === 0 ? 'Blue' : 'Orange');
-    }
-
-    // Detect the playlist from how many players are in the match
-    if (currentPlaylist === null && Data.Players) {
+  if (Event === 'UpdateState' && Data && Data.Players) {
+    // Detect playlist first based on player count, before fetching MMR
+    if (currentPlaylist === null) {
       const playerCount = Data.Players.length;
       if (playerCount === 1) currentPlaylist = '1v1';
       else if (playerCount === 2) currentPlaylist = '2v2';
@@ -256,11 +250,26 @@ function handleRLEvent(message) {
       console.log('🎮 Playlist detected:', currentPlaylist);
     }
 
+    // Find the local player by their ID, fallback to first player if ID not yet known
+    let player = playerID
+      ? Data.Players.find(p => p.PrimaryId === playerID)
+      : Data.Players[0];
+
+    if (!player) return;
+
+    // Assign team number using the correct player reference
+    if (myTeamNum === null) {
+      myTeamNum = player.TeamNum;
+      console.log('👤 Team detected:', myTeamNum === 0 ? 'Blue' : 'Orange');
+    }
+
+    // Detect player ID and assign team at the same time to avoid mismatch
     if (!playerID && player.PrimaryId) {
       playerID = player.PrimaryId;
+      myTeamNum = player.TeamNum; // Ensure team is set from the correct player
       console.log('👤 Player ID detected:', playerID);
       sendToMain('mmr-source', 'fetching');
-      fetchRealMMR();
+      fetchRealMMR(); // Playlist is already detected at this point
     }
   }
 
@@ -274,19 +283,20 @@ function handleRLEvent(message) {
 
     if (won) {
       state.wins++;
-      // Continue a win streak or reset to 1 if coming from a loss streak
+      // Continue win streak or reset to 1 if coming from a loss streak
       state.streak = state.streak > 0 ? state.streak + 1 : 1;
     } else {
       state.losses++;
-      // Continue a loss streak or reset to -1 if coming from a win streak
+      // Continue loss streak or reset to -1 if coming from a win streak
       state.streak = state.streak < 0 ? state.streak - 1 : -1;
     }
 
     broadcastState();
 
+    // Wait 45s for rlstats.net to update before fetching new MMR
     console.log('⏳ Waiting 45s before fetching real MMR...');
     sendToMain('mmr-source', 'fetching');
-    setTimeout(() => fetchRealMMR(true), 45000); // ← fromMatch = true
+    setTimeout(() => fetchRealMMR(true), 45000); // fromMatch = true
   }
 }
 
@@ -314,7 +324,7 @@ async function fetchRealMMR(fromMatch = false) {
       return;
     }
 
-    console.log('🌐 URL:', url);
+    console.log('🌐 Fetching URL:', url);
 
     const response = await fetch(url);
     const html = await response.text();
@@ -324,42 +334,33 @@ async function fetchRealMMR(fromMatch = false) {
     if (dataMatch) {
       const values = dataMatch[1].split(',').map(v => parseInt(v.trim())).filter(v => !isNaN(v));
       console.log('📊 MMR values:', values);
-      // Index: 0=Duel(1v1), 1=Doubles(2v2), 2=Standard(3v3)
+      // Index: 0 = Duel (1v1), 1 = Doubles (2v2), 2 = Standard (3v3)
 
       let realMMR = null;
       if (currentPlaylist === '1v1') realMMR = values[0];
       else if (currentPlaylist === '2v2') realMMR = values[1];
       else if (currentPlaylist === '3v3') realMMR = values[2];
-      else realMMR = values[1]; // Doubles by default
+      else realMMR = values[1]; // Default to Doubles if playlist unknown
 
       if (realMMR) {
         console.log('✅ Real MMR found:', realMMR, '(' + (currentPlaylist || '2v2') + ')');
-        
-        // Calculer la vraie différence
-        if (realMMR) {
-          console.log('✅ Real MMR found:', realMMR, '(' + (currentPlaylist || '2v2') + ')');
-          
-          // Only compute the diff when called after a match (not on initial fetch)
-          if (fromMatch && state.mmr !== 0) {
-            const diff = realMMR - state.mmr;
-            state.mmrGained += diff;
-            console.log('📈 MMR diff:', diff > 0 ? `+${diff}` : diff);
-          }
-          
-          state.mmr = realMMR;
-          broadcastState();
-          sendToMain('mmr-source', 'real');
-        } else {
-          console.log('⚠️ MMR not found in values');
-          sendToMain('mmr-source', 'estimated');
+
+        // Only compute the MMR diff when called after a match, not on initial fetch
+        if (fromMatch && state.mmr !== 0) {
+          const diff = realMMR - state.mmr;
+          state.mmrGained += diff;
+          console.log('📈 MMR diff:', diff > 0 ? `+${diff}` : diff);
         }
-        
+
         state.mmr = realMMR;
         broadcastState();
         sendToMain('mmr-source', 'real');
+      } else {
+        console.log('⚠️ MMR not found in parsed values');
+        sendToMain('mmr-source', 'estimated');
       }
     } else {
-      console.log('⚠️ Pattern not found in HTML');
+      console.log('⚠️ MMR pattern not found in HTML');
       sendToMain('mmr-source', 'estimated');
     }
   } catch (err) {
@@ -422,6 +423,7 @@ app.whenReady().then(() => {
   connectToRL();
   startRLDetection();
 
+  // Global shortcut to toggle overlay visibility
   globalShortcut.register('CommandOrControl+Shift+H', () => {
     if (overlayWindow) {
       if (overlayWindow.isVisible()) { overlayWindow.hide(); }
