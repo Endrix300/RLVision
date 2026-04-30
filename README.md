@@ -65,10 +65,8 @@ npm run build
 Windows may show a SmartScreen warning — click **More info** → **Run anyway**.
 This is normal for unsigned independent software.
 
+## 📸 Preview
 <table border="0" cellspacing="0" cellpadding="0" width="100%">
-  <tr>
-    <td colspan="2" align="center"><h3>📸 Preview</h3></td>
-  </tr>
   <tr>
     <td width="70%" align="center"><b>🎮 In-game Overlay</b></td>
     <td width="30%" align="center"><b>📊 Main App</b></td>
