@@ -52,9 +52,25 @@ PacketSendRate=60.0
 
 ### Want to modify or customize the code?
 
+**Option 1 — With Git** (recommended)
+
+Install Git first : https://git-scm.com/download/win
+
 ```bash
 git clone https://github.com/Endrix300/RLVision.git
 cd RLVision
+npm install
+npm start
+```
+
+**Option 2 — Without Git**
+
+1. Click the green **"Code"** button on the GitHub repo
+2. Click **"Download ZIP"**
+3. Extract the ZIP anywhere
+4. Open a terminal in the folder and run :
+
+```bash
 npm install
 npm start
 ```
