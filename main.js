@@ -33,6 +33,7 @@ let playerID = null;
 let myTeamNum = null;
 let currentPlaylist = null;
 let matchEnded = false;
+let initialMMRFetched = false;
 
 // ─────────────────────────────────────────────────────────────────────────────
 // MAIN WINDOW
@@ -207,20 +208,22 @@ function connectToRL() {
     }
   });
 
+
   client.on('data', (data) => {
     try {
       const message = JSON.parse(data.toString());
-      // The Data field is sometimes double-encoded as a JSON string
       if (message.Data && typeof message.Data === 'string') {
         message.Data = JSON.parse(message.Data);
       }
       handleRLEvent(message);
-    } catch (e) {}
+    } catch (e) {
+      // Silently ignore parse errors
+    }
   });
 
   client.on('error', () => { sendToMain('rl-connected', false); startReconnect(); });
   client.on('close', () => { sendToMain('rl-connected', false); startReconnect(); });
-}
+  }
 
 function startReconnect() {
   if (reconnectInterval) return;
@@ -232,57 +235,78 @@ function startReconnect() {
 // ─────────────────────────────────────────────────────────────────────────────
 function handleRLEvent(message) {
   const { Event, Data } = message;
-
-  // Reset match state on new game
+  
   if (Event === 'MatchCreated' || Event === 'MatchInitialized') {
     matchEnded = false;
     myTeamNum = null;
     currentPlaylist = null;
+    initialMMRFetched = false; // ← AJOUTE
+  }
+
+  // Reset match state on new game
+  if (Event === 'MatchCreated' && Data && Data.Game && Data.Game.Playlist) {
+    const p = Data.Game.Playlist;
+    if (p === 10) currentPlaylist = '1v1';
+    else if (p === 11) currentPlaylist = '2v2';
+    else if (p === 13) currentPlaylist = '3v3';
+    console.log('🎮 Playlist detected on MatchCreated:', currentPlaylist, '| Raw:', p);
   }
 
   if (Event === 'UpdateState' && Data && Data.Players) {
-    // Detect playlist first based on player count, before fetching MMR
-    if (currentPlaylist === null) {
+
+    // Detect playlist only when enough players are loaded
+    // Fallback in UpdateState: only if playlist still unknown and match not ended
+    if (currentPlaylist === null && !matchEnded && Data.Players.length >= 2) {
       if (Data.Game && Data.Game.Playlist) {
         const p = Data.Game.Playlist;
-        // SOS playlist IDs: 10 = Duel, 11 = Doubles, 13 = Standard
         if (p === 10) currentPlaylist = '1v1';
         else if (p === 11) currentPlaylist = '2v2';
         else if (p === 13) currentPlaylist = '3v3';
         console.log('🎮 Playlist detected via ID:', currentPlaylist, '| Raw:', p);
       }
-
-      // Fallback: count players on one team only (not total)
+      // Last resort: count players on team 0
+      // Last resort: count total players
       if (currentPlaylist === null) {
-        const teamPlayers = Data.Players.filter(p => p.TeamNum === 0);
-        const count = teamPlayers.length;
-        if (count === 1) currentPlaylist = '1v1';
-        else if (count === 2) currentPlaylist = '2v2';
-        else if (count >= 3) currentPlaylist = '3v3';
-        console.log('🎮 Playlist detected via team count:', currentPlaylist);
+        const total = Data.Players.length;
+        if (total <= 2) currentPlaylist = '2v2'; // Default to 2v2 (most common)
+        else if (total <= 4) currentPlaylist = '2v2';
+        else if (total >= 6) currentPlaylist = '3v3';
+        console.log('🎮 Playlist detected via total count:', currentPlaylist, '| Total players:', total);
       }
     }
 
-    // Find the local player by their ID, fallback to first player if ID not yet known
-    let player = playerID
-      ? Data.Players.find(p => p.PrimaryId === playerID)
-      : Data.Players[0];
+    // Identify local player and team
+    if (!playerID) {
+      const first = Data.Players[0];
+      if (first && first.PrimaryId) {
+        playerID = first.PrimaryId;
+        myTeamNum = first.TeamNum;
+        console.log('👤 Player ID detected:', playerID);
+        console.log('👤 Team detected:', myTeamNum === 0 ? 'Blue' : 'Orange');
 
-    if (!player) return;
-
-    // Assign team number using the correct player reference
-    if (myTeamNum === null) {
-      myTeamNum = player.TeamNum;
-      console.log('👤 Team detected:', myTeamNum === 0 ? 'Blue' : 'Orange');
+        // Wait for playlist to be detected before fetching MMR
+        if (currentPlaylist !== null) {
+          sendToMain('mmr-source', 'fetching');
+          fetchRealMMR();
+        } else {
+          console.log('⏳ Waiting for playlist before fetching MMR...');
+        }
+      }
+    } else if (myTeamNum === null) {
+      const me = Data.Players.find(p => p.PrimaryId === playerID);
+      if (me) {
+        myTeamNum = me.TeamNum;
+        console.log('👤 Team re-detected:', myTeamNum === 0 ? 'Blue' : 'Orange');
+      }
     }
 
-    // Detect player ID and assign team at the same time to avoid mismatch
-    if (!playerID && player.PrimaryId) {
-      playerID = player.PrimaryId;
-      myTeamNum = player.TeamNum; // Ensure team is set from the correct player
-      console.log('👤 Player ID detected:', playerID);
+
+    // Trigger initial MMR fetch once both playerID and playlist are known
+    if (playerID && currentPlaylist !== null && !initialMMRFetched) {
+      initialMMRFetched = true;
+      console.log('🎮 Playlist + playerID ready, fetching MMR...');
       sendToMain('mmr-source', 'fetching');
-      fetchRealMMR(); // Playlist is already detected at this point
+      fetchRealMMR();
     }
   }
 
@@ -306,10 +330,10 @@ function handleRLEvent(message) {
 
     broadcastState();
 
-    // Wait 45s for rlstats.net to update before fetching new MMR
-    console.log('⏳ Waiting 45s before fetching real MMR...');
+    // Retry fetching MMR until rlstats.net reflects the new value
+    console.log('⏳ Waiting for rlstats.net to update...');
     sendToMain('mmr-source', 'fetching');
-    setTimeout(() => fetchRealMMR(true), 50000); // fromMatch = true
+    fetchRealMMRWithRetry();
   }
 }
 
@@ -380,6 +404,25 @@ async function fetchRealMMR(fromMatch = false) {
     console.error('❌ MMR fetch error:', err.message);
     sendToMain('mmr-source', 'estimated');
   }
+}
+
+
+
+async function fetchRealMMRWithRetry(retries = 5, delay = 15000) {
+  const previousMMR = state.mmr;
+
+  for (let i = 0; i < retries; i++) {
+    // Wait before each attempt (10s for first, 15s for subsequent)
+    await new Promise(res => setTimeout(res, i === 0 ? 10000 : delay));
+    await fetchRealMMR(true); // always pass fromMatch = true
+
+    if (state.mmr !== previousMMR) {
+      console.log('✅ MMR updated after', i + 1, 'attempt(s)');
+      return;
+    }
+    console.log(`⏳ MMR unchanged, retrying... (${i + 1}/${retries})`);
+  }
+  console.log('⚠️ MMR did not update after all retries');
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
