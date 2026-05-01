@@ -44,10 +44,10 @@ function updateOverlay(state) {
   // Update streak display with color based on win/loss direction
   if (state.streak > 0) {
     streakEl.className = 'ov-streak win';
-    streakEl.textContent = `🔥 ${state.streak}W streak`;
+    streakEl.textContent = `🔥 ${state.streak} Win streak`;
   } else if (state.streak < 0) {
     streakEl.className = 'ov-streak loss';
-    streakEl.textContent = `❄️ ${Math.abs(state.streak)}L streak`;
+    streakEl.textContent = `❄️ ${Math.abs(state.streak)} Loss streak`;
   } else {
     streakEl.className = 'ov-streak neutral';
     streakEl.textContent = '— No streak';
@@ -57,12 +57,12 @@ function updateOverlay(state) {
   const gained = state.mmrGained || 0;
   if (gained > 0) {
     sessionEl.className = 'ov-mmr-session positive';
-    sessionEl.textContent = `📈 +${gained} session`;
+    sessionEl.textContent = `📈 +${gained} MMR`;
   } else if (gained < 0) {
     sessionEl.className = 'ov-mmr-session negative';
-    sessionEl.textContent = `📉 ${gained} session`;
+    sessionEl.textContent = `📉 ${gained} MMR`;
   } else {
     sessionEl.className = 'ov-mmr-session neutral';
-    sessionEl.textContent = `Δ +0 session`;
+    sessionEl.textContent = `Δ 0 MMR`;
   }
 }
