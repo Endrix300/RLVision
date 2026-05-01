@@ -254,7 +254,6 @@ function handleRLEvent(message) {
 
   if (Event === 'UpdateState' && Data && Data.Players) {
 
-    // Detect playlist only when enough players are loaded
     // Fallback in UpdateState: only if playlist still unknown and match not ended
     if (currentPlaylist === null && !matchEnded && Data.Players.length >= 2) {
       if (Data.Game && Data.Game.Playlist) {
@@ -264,7 +263,6 @@ function handleRLEvent(message) {
         else if (p === 13) currentPlaylist = '3v3';
         console.log('🎮 Playlist detected via ID:', currentPlaylist, '| Raw:', p);
       }
-      // Last resort: count players on team 0
       // Last resort: count total players
       if (currentPlaylist === null) {
         const total = Data.Players.length;
@@ -409,14 +407,20 @@ async function fetchRealMMR(fromMatch = false) {
 
 
 async function fetchRealMMRWithRetry(retries = 5, delay = 15000) {
-  const previousMMR = state.mmr;
+  const mmrBeforeMatch = state.mmr; // ← sauvegarde avant tout retry
 
   for (let i = 0; i < retries; i++) {
-    // Wait before each attempt (10s for first, 15s for subsequent)
     await new Promise(res => setTimeout(res, i === 0 ? 10000 : delay));
-    await fetchRealMMR(true); // always pass fromMatch = true
+    
+    // Fetch sans fromMatch pour ne pas accumuler pendant les retries
+    await fetchRealMMR(false);
 
-    if (state.mmr !== previousMMR) {
+    if (state.mmr !== mmrBeforeMatch) {
+      // Calculer le diff une seule fois ici
+      const diff = state.mmr - mmrBeforeMatch;
+      state.mmrGained += diff;
+      console.log('📈 MMR diff:', diff > 0 ? `+${diff}` : diff);
+      broadcastState();
       console.log('✅ MMR updated after', i + 1, 'attempt(s)');
       return;
     }
