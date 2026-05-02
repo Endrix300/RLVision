@@ -40,6 +40,7 @@ PacketSendRate=60.0
 
 > ⚠️ This file must be edited **before** launching Rocket League. Changes won't apply while the game is running.
 > ⚠️ Overlays will not display correctly in fullscreen mode — **Borderless Windowed is required**.
+> ⚠️ The game may experience lag during the first 5 minutes after launch — this is normal while RLVision initializes in the background.
 
 ## 📥 Installation
 ### Just want to use RLVision? No commands needed!
