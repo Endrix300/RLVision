@@ -4,6 +4,7 @@ const { exec, spawn } = require('child_process');
 const fs   = require('fs');
 const path = require('path');
 
+
 // Path where window positions and settings are persisted between sessions
 const STATE_FILE = path.join(app.getPath('userData'), 'rlvision-positions.json');
 
@@ -37,6 +38,7 @@ let reconnectInterval = null; // Interval handle for automatic reconnection atte
 let rlWasActive    = false; // Tracks whether RL was the foreground window on the last check
 let rlCheckProcess = null;  // PowerShell process that polls for RL focus
 let hideTimeout    = null;  // Debounce timer for hiding the overlay when RL loses focus
+let rlInstallPath = null; // Chemin vers CookedPCConsole, détecté automatiquement
 
 // ─── Player Data ──────────────────────────────────────────────────────────────
 
@@ -128,13 +130,19 @@ function loadPositionsFromDisk() {
       state.overlayWidth  = saved.overlayWidth  ?? 300;
       state.overlayHeight = saved.overlayHeight ?? 110;
       console.log('✅ Positions loaded from disk');
+
+      if (saved.boostEnabled !== undefined) {
+        mainWindow?.webContents.on('did-finish-load', () => {
+          sendToMain('boost-state', saved.boostEnabled);
+        });
+        console.log('✅ Boost state loaded:', saved.boostEnabled);
+      }
     }
   } catch (e) {
     console.log('⚠️ Could not load positions');
   }
   loadScoreboardKey();
 }
-
 // ─── Window: Main ─────────────────────────────────────────────────────────────
 
 /**
@@ -163,6 +171,23 @@ function createMainWindow() {
     sendToMain('rl-connected', isConnected);
     sendToMain('state-update', state);
     if (scoreboardKey) sendToMain('scoreboard-key', scoreboardKey);
+
+    // Restore boost state
+    try {
+      if (fs.existsSync(STATE_FILE)) {
+        const saved = JSON.parse(fs.readFileSync(STATE_FILE, 'utf8'));
+        if (saved.boostEnabled !== undefined) {
+          sendToMain('boost-state', saved.boostEnabled);
+          console.log('✅ Boost state restored:', saved.boostEnabled);
+        }
+        if (saved.playerOverlaysEnabled !== undefined) {
+          sendToMain('player-overlays-state', saved.playerOverlaysEnabled);
+          console.log('✅ Player overlays state restored:', saved.playerOverlaysEnabled);
+        }
+      }
+    } catch (e) {
+      console.log('⚠️ Could not restore states');
+    }
   });
 
   // Closing the main window tears down all child windows and the app
@@ -698,13 +723,22 @@ function startRLDetection() {
           [DllImport("user32.dll")]
           public static extern int GetWindowThreadProcessId(IntPtr hWnd, out int lpdwProcessId);
         }
-"@
+    "@
       $hwnd = [ForegroundWindow]::GetForegroundWindow()
       $procId = 0
       [ForegroundWindow]::GetWindowThreadProcessId($hwnd, [ref]$procId) | Out-Null
       $proc = Get-Process -Id $procId -ErrorAction SilentlyContinue
       if ($proc -and $proc.Name -eq 'RocketLeague') {
-        Write-Output 'RL_OPEN'
+        try {
+          $path = $proc.MainModule.FileName
+          if ($path -like '*Steam*') {
+            Write-Output "RL_OPEN:STEAM:$path"
+          } else {
+            Write-Output "RL_OPEN:EPIC:$path"
+          }
+        } catch {
+          Write-Output 'RL_OPEN:UNKNOWN'
+        }
       } else {
         Write-Output 'RL_CLOSED'
       }
@@ -715,22 +749,30 @@ function startRLDetection() {
   rlCheckProcess = ps;
 
   ps.stdout.on('data', (data) => {
-    const lines      = data.toString().split('\n').map(l => l.trim()).filter(l => l.length > 0);
+    const lines = data.toString().split('\n').map(l => l.trim()).filter(l => l.length > 0);
     if (lines.length === 0) return;
-    const lastLine   = lines[lines.length - 1];
+    const lastLine = lines[lines.length - 1];
     const isRLFocused = lastLine.includes('RL_OPEN');
 
-    // Skip focus changes while the user is dragging overlays
-    if (altIsHeld) return;
-
     if (isRLFocused && !rlWasActive) {
-      // RL just gained focus — clear any pending hide timer and show the overlay
+      // Détecter la plateforme et extraire le chemin RL
+      const parts = lastLine.split(':');
+      const platform = parts[1]; // 'STEAM', 'EPIC', ou 'UNKNOWN'
+      const exePath = parts.slice(2).join(':'); // chemin complet
+
+      if (exePath) {
+        // Déduire le chemin CookedPCConsole depuis l'exe
+        rlInstallPath = exePath
+          .replace('Binaries\\Win64\\RocketLeague.exe', 'TAGame\\CookedPCConsole\\')
+          .replace('Binaries\\Win32\\RocketLeague.exe', 'TAGame\\CookedPCConsole\\');
+      }
+
+      console.log(`🎮 RL detected | Platform: ${platform} | Path: ${rlInstallPath}`);
+
       if (hideTimeout) { clearTimeout(hideTimeout); hideTimeout = null; }
       rlWasActive = true;
       showOverlay();
-
     } else if (!isRLFocused && rlWasActive) {
-      // RL lost focus — debounce before hiding to avoid flicker on alt-tab
       if (!hideTimeout) {
         hideTimeout = setTimeout(() => {
           if (altIsHeld) { hideTimeout = null; return; }
@@ -1247,8 +1289,59 @@ function hidePlayerOverlays() {
 
 ipcMain.on('get-state', (event) => { event.reply('state-update', state); });
 
-// Manual MMR override from the settings UI
-ipcMain.on('set-mmr', (event, value) => { state.mmr = parseInt(value) || 0; broadcastState(); });
+ipcMain.on('toggle-boost', (event, enabled) => {
+  try {
+    const appDir = app.getAppPath();
+    console.log('🚀 Toggle boost:', enabled ? 'ENABLE' : 'DISABLE');
+    console.log('📁 App dir:', appDir);
+
+    const src = path.join(
+      appDir,
+      enabled ? 'Boost-Alpha\\Enable\\SFX_Boost_Standard.bnk'
+              : 'Boost-Alpha\\Disable\\SFX_Boost_Standard.bnk'
+    );
+    console.log('📂 Source file:', src);
+    console.log('📂 Source exists:', fs.existsSync(src));
+
+    // Utilise le chemin détecté automatiquement, sinon fallback sur les chemins connus
+    let dest = null;
+    if (rlInstallPath) {
+      dest = path.join(rlInstallPath, 'SFX_Boost_Standard.bnk');
+      console.log('📂 Using auto-detected path:', dest);
+    } else {
+      const possiblePaths = [
+        'C:\\Program Files\\Epic Games\\rocketleague\\TAGame\\CookedPCConsole\\SFX_Boost_Standard.bnk',
+        'C:\\Program Files (x86)\\Steam\\steamapps\\common\\rocketleague\\TAGame\\CookedPCConsole\\SFX_Boost_Standard.bnk',
+        'D:\\Program Files\\Epic Games\\rocketleague\\TAGame\\CookedPCConsole\\SFX_Boost_Standard.bnk',
+        'D:\\Program Files (x86)\\Steam\\steamapps\\common\\rocketleague\\TAGame\\CookedPCConsole\\SFX_Boost_Standard.bnk',
+        'D:\\Steam\\steamapps\\common\\rocketleague\\TAGame\\CookedPCConsole\\SFX_Boost_Standard.bnk',
+        'C:\\Steam\\steamapps\\common\\rocketleague\\TAGame\\CookedPCConsole\\SFX_Boost_Standard.bnk',
+      ];
+      dest = possiblePaths.find(p => fs.existsSync(p));
+      console.log('📂 Using fallback path:', dest);
+    }
+
+    if (!dest) {
+      console.error('❌ Rocket League not found');
+      event.reply('boost-result', { success: false, error: 'Rocket League not found. Launch RL first or check your install path.' });
+      return;
+    }
+
+    fs.copyFileSync(src, dest);
+    console.log('✅ File copied successfully');
+
+    let existing = {};
+    if (fs.existsSync(STATE_FILE)) existing = JSON.parse(fs.readFileSync(STATE_FILE, 'utf8'));
+    existing.boostEnabled = enabled;
+    fs.writeFileSync(STATE_FILE, JSON.stringify(existing), 'utf8');
+    console.log('💾 Boost state saved:', enabled);
+
+    event.reply('boost-result', { success: true, enabled });
+  } catch (err) {
+    console.error('❌ Error:', err.message);
+    event.reply('boost-result', { success: false, error: err.message });
+  }
+});
 
 // Reset all session stats
 ipcMain.on('reset-stats', () => {
@@ -1265,6 +1358,16 @@ ipcMain.on('refresh-mmr', () => {
 // Toggle the player overlay windows on/off
 ipcMain.on('toggle-player-overlays', (_, enabled) => {
   playerOverlaysEnabled = enabled;
+
+  // Sauvegarde l'état
+  try {
+    let existing = {};
+    if (fs.existsSync(STATE_FILE)) existing = JSON.parse(fs.readFileSync(STATE_FILE, 'utf8'));
+    existing.playerOverlaysEnabled = enabled;
+    fs.writeFileSync(STATE_FILE, JSON.stringify(existing), 'utf8');
+    console.log('💾 Player overlays state saved:', enabled);
+  } catch (e) {}
+
   if (enabled) {
     if (gamePlayers.length > 0) createPlayerOverlays();
   } else {
@@ -1303,6 +1406,7 @@ ipcMain.on('gamepad-button-up', (_, data) => {
     hidePlayerOverlays();
   }
 });
+
 
 // Save overlay positions when the user clicks the save button (shown while Alt is held)
 ipcMain.on('save-overlay-positions', () => {

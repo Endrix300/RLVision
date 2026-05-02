@@ -1,5 +1,6 @@
 const { ipcRenderer } = require('electron');
 
+
 // Request the current state from the main process on startup
 ipcRenderer.send('get-state');
 
@@ -89,13 +90,52 @@ function updateUI(state) {
   document.getElementById('heightInput').value = state.overlayHeight;
 }
 
-// Send a manually entered MMR value to the main process
-function setMMR() {
-  const val = document.getElementById('mmrInput').value;
-  if (val === '') return;
-  ipcRenderer.send('set-mmr', val);
-  document.getElementById('mmrInput').value = '';
+ipcRenderer.on('player-overlays-state', (_, enabled) => {
+  playerOverlaysEnabled = enabled;
+  const btn = document.getElementById('togglePlayerOverlaysBtn');
+  const status = document.getElementById('playerOverlaysStatus');
+  btn.textContent = enabled ? 'Disable' : 'Enable';
+  btn.className = enabled ? 'btn btn-danger' : 'btn btn-ghost';
+  status.textContent = enabled ? 'Enabled' : 'Disabled';
+  status.style.color = enabled ? '#10b981' : '#666';
+  ipcRenderer.send('toggle-player-overlays', enabled);
+});
+
+
+ipcRenderer.on('boost-state', (_, enabled) => {
+  boostEnabled = enabled;
+  const btn = document.getElementById('toggleBoostBtn');
+  const status = document.getElementById('boostStatus');
+  btn.textContent = enabled ? 'Disable' : 'Enable';
+  btn.className = enabled ? 'btn btn-danger' : 'btn btn-ghost';
+  status.textContent = enabled ? 'Enabled' : 'Disabled';
+  status.style.color = enabled ? '#10b981' : '#666';
+});
+
+let boostEnabled = false;
+
+function toggleBoost() {
+  boostEnabled = !boostEnabled;
+  const btn = document.getElementById('toggleBoostBtn');
+  const status = document.getElementById('boostStatus');
+  const msg = document.getElementById('boostStatusMsg');
+
+  btn.textContent = boostEnabled ? 'Disable' : 'Enable';
+  btn.className = boostEnabled ? 'btn btn-danger' : 'btn btn-ghost';
+  status.textContent = boostEnabled ? 'Enabled' : 'Disabled';
+  status.style.color = boostEnabled ? '#10b981' : '#666';
+  msg.textContent = '⏳ Applying...';
+
+  ipcRenderer.send('toggle-boost', boostEnabled);
+
+  // Show restart warning
+  document.getElementById('restartWarning').style.display = 'block';
 }
+
+ipcRenderer.on('boost-result', (_, result) => {
+  const msg = document.getElementById('boostStatusMsg');
+  msg.textContent = result.success ? (result.enabled ? '✅ Alpha Boost enabled' : '✅ Original boost restored') : '❌ Error: ' + result.error;
+});
 
 // Trigger a fresh MMR fetch from rlstats.net
 function refreshMMR() {
@@ -162,5 +202,3 @@ function togglePlayerOverlays() {
 document.getElementById('mmrInput').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') setMMR();
 });
-
-togglePlayerOverlays(); // enabled by default

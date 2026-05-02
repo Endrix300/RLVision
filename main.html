@@ -385,14 +385,36 @@
     <div style="font-size: 11px; color: #555; margin-top: 8px;" id="bindStatus"></div>
   </div>
 
-  <!-- ── Manual MMR Override ────────────────────────────────────────────────
-       Useful when the automatic rlstats.net fetch is unavailable or wrong. -->
+  <!-- ── Alpha Boost Toggle ──────────────────────────────────────────────────── -->
   <div class="section">
-    <div class="section-title">⚙️ Set MMR</div>
-    <div class="mmr-input-row">
-      <input type="number" id="mmrInput" placeholder="e.g. 850" min="0" max="9999" />
-      <button class="btn btn-primary" onclick="setMMR()">Apply</button>
+    <div class="section-title">🚀 Alpha Boost Sound</div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" id="toggleBoostBtn" onclick="toggleBoost()">Enable</button>
+      <span style="font-size: 12px; color: #666; align-self: center;" id="boostStatus">Disabled</span>
     </div>
+    <div style="font-size: 11px; color: #555; margin-top: 8px;" id="boostStatusMsg"></div>
+  </div>
+
+  <!-- ── Restart Warning Popup ──────────────────────────────────────────────── -->
+  <div id="restartWarning" style="
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #1a1a2e;
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 12px;
+    padding: 20px 24px;
+    text-align: center;
+    z-index: 999;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+    min-width: 220px;
+  ">
+    <div style="font-size: 22px; margin-bottom: 8px;">⚠️</div>
+    <div style="font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 4px;">Restart required</div>
+    <div style="font-size: 11px; color: #666;">Please restart Rocket League<br>for changes to take effect.</div>
+    <button class="btn btn-ghost" style="margin-top: 14px; width: 100%;" onclick="document.getElementById('restartWarning').style.display='none'">OK</button>
   </div>
 
   <!-- ── Overlay Size Controls ──────────────────────────────────────────────
