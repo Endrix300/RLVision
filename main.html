@@ -312,6 +312,39 @@
     </div>
   </div>
 
+  <!-- Toggle overlays joueurs -->
+  <div class="section">
+    <div class="section-title">👥 Player Overlays</div>
+    <div class="btn-row">
+      <button class="btn btn-ghost" id="togglePlayerOverlaysBtn" onclick="togglePlayerOverlays()">Enable</button>
+      <span style="font-size: 12px; color: #666; align-self: center;" id="playerOverlaysStatus">Disabled</span>
+    </div>
+  </div>
+
+  <!-- Scoreboard key binding -->
+  <div class="section">
+    <div class="section-title">🎮 Scoreboard Key</div>
+    <div style="font-size: 12px; color: #666; margin-bottom: 10px;">
+      Appuie sur ta touche scoreboard pour l'enregistrer
+    </div>
+    <div style="display: flex; gap: 10px; align-items: center;">
+      <div id="scoreboardKeyDisplay" style="
+        flex: 1;
+        background: rgba(255,255,255,0.06);
+        border: 1px solid rgba(255,255,255,0.12);
+        border-radius: 8px;
+        padding: 10px 14px;
+        font-size: 14px;
+        font-weight: 700;
+        color: #a78bfa;
+        text-align: center;
+      ">Non configuré</div>
+      <button class="btn btn-primary" id="bindBtn" onclick="startBinding()">Bind</button>
+      <button class="btn btn-danger" onclick="clearBinding()">Clear</button>
+    </div>
+    <div style="font-size: 11px; color: #555; margin-top: 8px;" id="bindStatus"></div>
+  </div>
+
   <!-- Manual MMR override: useful when the auto-fetch is unavailable -->
   <div class="section">
     <div class="section-title">⚙️ Set MMR</div>

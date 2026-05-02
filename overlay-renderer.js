@@ -11,6 +11,7 @@ ipcRenderer.on('state-update', (event, state) => {
   updateOverlay(state);
 });
 
+
 function updateOverlay(state) {
   const mmrEl = document.getElementById('ovMMR');
   const streakEl = document.getElementById('ovStreak');

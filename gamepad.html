@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<body>
+<script>
+const { ipcRenderer } = require('electron');
+
+const buttonStates = {};
+
+function poll() {
+  const gamepads = navigator.getGamepads();
+  for (const gp of gamepads) {
+    if (!gp) continue;
+    gp.buttons.forEach((btn, i) => {
+      const key = `${gp.index}_${i}`;
+      if (btn.pressed && !buttonStates[key]) {
+        buttonStates[key] = true;
+        ipcRenderer.send('gamepad-button-down', { gamepadIndex: gp.index, button: i, id: gp.id });
+      } else if (!btn.pressed && buttonStates[key]) {
+        buttonStates[key] = false;
+        ipcRenderer.send('gamepad-button-up', { gamepadIndex: gp.index, button: i });
+      }
+    });
+  }
+  requestAnimationFrame(poll);
+}
+
+window.addEventListener('gamepadconnected', (e) => {
+  console.log('Gamepad connected:', e.gamepad.id);
+  ipcRenderer.send('gamepad-connected', { id: e.gamepad.id, index: e.gamepad.index });
+  poll();
+});
+
+window.addEventListener('gamepaddisconnected', (e) => {
+  ipcRenderer.send('gamepad-disconnected', { index: e.gamepad.index });
+});
+</script>
+</body>
+</html>

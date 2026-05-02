@@ -68,6 +68,22 @@ function updateUI(state) {
     streakEl.textContent = 'No streak';
   }
 
+
+  const gained = state.mmrGained || 0;
+  const gainedEl = document.getElementById('mmrGainedEl');
+  if (gainedEl) {
+    if (gained > 0) {
+      gainedEl.style.color = '#10b981';
+      gainedEl.textContent = `📈 +${gained} this session`;
+    } else if (gained < 0) {
+      gainedEl.style.color = '#ef4444';
+      gainedEl.textContent = `📉 ${gained} this session`;
+    } else {
+      gainedEl.style.color = '#666';
+      gainedEl.textContent = `Δ 0 this session`;
+    }
+  }
+
   // Keep overlay size inputs in sync with the stored state
   document.getElementById('widthInput').value = state.overlayWidth;
   document.getElementById('heightInput').value = state.overlayHeight;
@@ -94,23 +110,57 @@ function applySize() {
 }
 
 
-// MMR gained this session
-const gainedEl = document.getElementById('mmrGainedEl');
-if (gainedEl) {
-  const gained = state.mmrGained || 0;
-  if (gained > 0) {
-    gainedEl.style.color = '#10b981';
-    gainedEl.textContent = `📈 +${gained} this session`;
-  } else if (gained < 0) {
-    gainedEl.style.color = '#ef4444';
-    gainedEl.textContent = `📉 ${gained} this session`;
-  } else {
-    gainedEl.style.color = '#666';
-    gainedEl.textContent = `Δ 0 this session`;
+let isBinding = false;
+
+function startBinding() {
+  isBinding = true;
+  document.getElementById('bindStatus').textContent = '⏳ Appuie sur une touche clavier ou bouton manette...';
+  document.getElementById('bindBtn').textContent = 'Annuler';
+  document.getElementById('bindBtn').onclick = cancelBinding;
+  ipcRenderer.send('start-binding');
+}
+
+function cancelBinding() {
+  isBinding = false;
+  document.getElementById('bindStatus').textContent = '';
+  document.getElementById('bindBtn').textContent = 'Bind';
+  document.getElementById('bindBtn').onclick = startBinding;
+  ipcRenderer.send('stop-binding');
+}
+
+function clearBinding() {
+  ipcRenderer.send('clear-binding');
+  document.getElementById('scoreboardKeyDisplay').textContent = 'Non configuré';
+}
+
+ipcRenderer.on('binding-captured', (_, key) => {
+  isBinding = false;
+  document.getElementById('scoreboardKeyDisplay').textContent = key.label;
+  document.getElementById('bindStatus').textContent = '✅ Touche enregistrée';
+  document.getElementById('bindBtn').textContent = 'Bind';
+  document.getElementById('bindBtn').onclick = startBinding;
+});
+
+ipcRenderer.on('scoreboard-key', (_, key) => {
+  if (key) {
+    document.getElementById('scoreboardKeyDisplay').textContent = key.label;
   }
+});
+
+let playerOverlaysEnabled = false;
+
+function togglePlayerOverlays() {
+  playerOverlaysEnabled = !playerOverlaysEnabled;
+  ipcRenderer.send('toggle-player-overlays', playerOverlaysEnabled);
+  document.getElementById('togglePlayerOverlaysBtn').textContent = playerOverlaysEnabled ? 'Disable' : 'Enable';
+  document.getElementById('togglePlayerOverlaysBtn').className = playerOverlaysEnabled ? 'btn btn-danger' : 'btn btn-ghost';
+  document.getElementById('playerOverlaysStatus').textContent = playerOverlaysEnabled ? 'Enabled' : 'Disabled';
+  document.getElementById('playerOverlaysStatus').style.color = playerOverlaysEnabled ? '#10b981' : '#666';
 }
 
 // Allow pressing Enter to submit a custom MMR value
 document.getElementById('mmrInput').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') setMMR();
 });
+
+togglePlayerOverlays(); // enabled by default

@@ -24,5 +24,9 @@
       "**/*",
       "!node_modules/**"
     ]
+  },
+  "dependencies": {
+    "@kmamal/sdl": "^0.11.13",
+    "node-hid": "^3.3.0"
   }
 }
