@@ -1,6 +1,5 @@
 # 🎮 RLVision
 > The first EAC-compatible Rocket League overlay — Real MMR tracking, Win/Loss/Streak, auto-show when RL is focused.
-
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![EAC](https://img.shields.io/badge/EAC-Compatible-green)
 ![Platform](https://img.shields.io/badge/platform-Windows-lightgrey)
@@ -8,14 +7,16 @@
 ![Free](https://img.shields.io/badge/price-Free-brightgreen)
 
 ## What's new in v2.0.0
-- Real MMR tracking (fetched from rlstats.net after each match)
-- Auto-detected playlist (1v1, 2v2, 3v3)
-- Win / Loss counter with session stats
-- Win and loss streak indicator
-- Auto-show overlay when Rocket League is focused
-- Auto-hide when you switch to another window
-- Draggable overlay
-- Toggle with Ctrl+Shift+H
+- ✅ Real MMR tracking (fetched from [rlstats.net](http://rlstats.net) after each match)
+- ✅ Auto-detected playlist (1v1, 2v2, 3v3)
+- ✅ Win / Loss counter with session stats
+- ✅ Win and loss streak indicator
+- ✅ Auto-show overlay when Rocket League is focused
+- ✅ Auto-hide when you switch to another window
+- ✅ Draggable overlay
+- ✅ Toggle with Ctrl+Shift+H
+- ✅ MMR displayed in-game on the scoreboard for every player
+- ✅ Alpha boost sound replacement
 
 ## ⚙️ Required Configuration
 Before launching RLVision, you need to enable the Stats API in Rocket League.
@@ -24,7 +25,7 @@ Before launching RLVision, you need to enable the Stats API in Rocket League.
 > You can read the official documentation here: https://www.rocketleague.com/en/developer/stats-api
 
 1. Open this file with Notepad **as Administrator** :
-   C:\Program Files\Epic Games\rocketleague\TAGame\Config\DefaultStatsAPI.ini
+   `C:\Program Files\Epic Games\rocketleague\TAGame\Config\DefaultStatsAPI.ini`
 
 2. Make sure it contains :
 ```ini
@@ -35,10 +36,12 @@ PacketSendRate=60.0
 
 3. Save the file and **restart Rocket League**
 
+4. In Rocket League, go to **Settings → Video** and set **Display Mode** to **Borderless Windowed**
+
 > ⚠️ This file must be edited **before** launching Rocket League. Changes won't apply while the game is running.
+> ⚠️ Overlays will not display correctly in fullscreen mode — **Borderless Windowed is required**.
 
 ## 📥 Installation
-
 ### Just want to use RLVision? No commands needed!
 👉 Download the installer directly here :
 **https://github.com/Endrix300/RLVision/releases/tag/RLVision-installer**
@@ -106,4 +109,3 @@ This is normal for unsigned independent software.
     <td width="30%"><img width="100%" alt="RLVision App" src="https://github.com/user-attachments/assets/355c2790-8287-452c-8a36-b6eb28d42bdd" /></td>
   </tr>
 </table>
-
