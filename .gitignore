@@ -1,2 +1,9 @@
 node_modules/
 dist/
+.claude/
+FilesChanges/
+notify.log
+__pycache__/
+*.pyc
+UPKSwap/AssetSwapper_Decrypted/
+UPKSwap/swap_journal.jsonl

@@ -320,32 +320,7 @@ ipcMain.on('toggle-boost', (event, enabled) => {
 // ─── Workshop IPC ─────────────────────────────────────────────────────────────
 
 const https = require('https');
-const REMOTE_MANIFEST_URL = 'https://api.rlpeak.com/v1/manifest.json';
-const REMOTE_CATALOGS_FALLBACK = {
-  skins: 'https://api.rlpeak.com/v1/catalogs/skins.json',
-  wheels: 'https://api.rlpeak.com/v1/catalogs/wheels.json',
-  boosts: 'https://api.rlpeak.com/v1/catalogs/boosts.json',
-};
-const ORIGINAL_RELEASE_ZIPS = {
-  skins: 'https://github.com/Endrix300/RLVision/releases/download/Original-Files/OriginalSkins.zip',
-  wheels: 'https://github.com/Endrix300/RLVision/releases/download/Original-Files/OriginalWheel.zip',
-  boosts: 'https://github.com/Endrix300/RLVision/releases/download/Original-Files/OriginalBoost.zip',
-};
 let remoteCatalogCache = null;
-
-
-const ITEMS_RELEASE_BASE = 'https://github.com/Endrix300/RLVision/releases/download/Items-Files';
-
-const ITEMS_RELEASE_ZIPS = {
-  boosts : `${ITEMS_RELEASE_BASE}/Boosts.zip`,
-  wheels : `${ITEMS_RELEASE_BASE}/Wheels.zip`,
-  skins  : {
-    Skin_1: `${ITEMS_RELEASE_BASE}/Skin_1.zip`,
-    Skin_2: `${ITEMS_RELEASE_BASE}/Skin_2.zip`,
-    Skin_3: `${ITEMS_RELEASE_BASE}/Skin_3.zip`,
-    Skin_4: `${ITEMS_RELEASE_BASE}/Skin_4.zip`,
-  }
-};
 
 const SKINS_INDEX = require('./skins-index.json'); // ← mets skins-index.json dans src/
 
@@ -386,39 +361,6 @@ function buildRemoteFileUrl(baseFilesUrl, remotePath) {
   return `${cleanBase}/${cleanPath}`;
 }
 
-function getOriginalBackupsDir() {
-  const dir = path.join(app.getPath('userData'), 'rlvision-original-backups');
-  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
-  return dir;
-}
-
-function backupOriginalFileIfNeeded(cookedDir, filename) {
-  const sourcePath = path.join(cookedDir, filename);
-  if (!fs.existsSync(sourcePath)) return;
-
-  const backupPath = path.join(getOriginalBackupsDir(), filename);
-  if (fs.existsSync(backupPath)) return;
-
-  const backupParent = path.dirname(backupPath);
-  if (!fs.existsSync(backupParent)) fs.mkdirSync(backupParent, { recursive: true });
-  fs.copyFileSync(sourcePath, backupPath);
-}
-
-function restoreOriginalFileFromBackup(cookedDir, filename) {
-  const backupPath = path.join(getOriginalBackupsDir(), filename);
-  if (!fs.existsSync(backupPath)) return false;
-
-  const targetPath = path.join(cookedDir, filename);
-  const targetParent = path.dirname(targetPath);
-  if (!fs.existsSync(targetParent)) fs.mkdirSync(targetParent, { recursive: true });
-  fs.copyFileSync(backupPath, targetPath);
-  return true;
-}
-
-function clearOriginalBackup(filename) {
-  const backupPath = path.join(getOriginalBackupsDir(), filename);
-  if (fs.existsSync(backupPath)) fs.unlinkSync(backupPath);
-}
 
 function getLocalSwapBackupsDir() {
   const dir = path.join(app.getPath('userData'), 'rlvision-local-swap-backups');
@@ -475,18 +417,6 @@ function getTargetFilenameForSwap(category, donorFilename) {
   return 'Stripes_SF.upk';
 }
 
-async function restoreFileFromOriginalSource({ category, filename, cookedDir }) {
-  if (restoreOriginalFileFromBackup(cookedDir, filename)) {
-    clearOriginalBackup(filename);
-    return;
-  }
-
-  const zipUrl = ORIGINAL_RELEASE_ZIPS[category];
-  if (!zipUrl) throw new Error(`No original ZIP configured for ${category}`);
-
-  const originalFile = await extractFromRemoteZip(zipUrl, filename);
-  fs.writeFileSync(path.join(cookedDir, filename), originalFile);
-}
 
 function normalizeSkinsCatalog(catalog) {
   const cars = catalog?.cars || {};
@@ -623,124 +553,6 @@ async function fetchRemoteCatalogs() {
   return remoteCatalogCache;
 }
 
-// ─── Remote ZIP Extraction (GitHub Releases) ─────────────────────────────────
-
-const ORIGINAL_MAPS_URL = 'https://github.com/Endrix300/RLVision/releases/download/Original-Files/OriginalMaps.zip';
-
-function httpsRange(url, start, end) {
-  return new Promise((resolve, reject) => {
-    const parsed = new URL(url);
-    const req = https.request({
-      hostname: parsed.hostname,
-      path: parsed.pathname + parsed.search,
-      headers: { 'Range': `bytes=${start}-${end}`, 'User-Agent': 'RLVision' },
-    }, (res) => {
-      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location)
-        return httpsRange(res.headers.location, start, end).then(resolve).catch(reject);
-      const chunks = [];
-      res.on('data', c => chunks.push(c));
-      res.on('end', () => resolve(Buffer.concat(chunks)));
-      res.on('error', reject);
-    });
-    req.on('error', reject);
-    req.end();
-  });
-}
-
-function resolveUrlAndSize(url) {
-  return new Promise((resolve, reject) => {
-    const parsed = new URL(url);
-    const req = https.request({
-      hostname: parsed.hostname,
-      path: parsed.pathname + parsed.search,
-      method: 'HEAD',
-      headers: { 'User-Agent': 'RLVision' },
-    }, (res) => {
-      if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location)
-        return resolveUrlAndSize(res.headers.location).then(resolve).catch(reject);
-      resolve({ finalUrl: url, size: parseInt(res.headers['content-length'] || '0') });
-    });
-    req.on('error', reject);
-    req.end();
-  });
-}
-
-async function extractFromRemoteZip(zipUrl, entryName) {
-  const { finalUrl, size } = await resolveUrlAndSize(zipUrl);
-  if (!size) throw new Error('Could not determine ZIP file size');
-
-  // Read last 65KB to locate End of Central Directory
-  const tail = await httpsRange(finalUrl, size - Math.min(65536, size), size - 1);
-  let eocdPos = -1;
-  for (let i = tail.length - 22; i >= 0; i--) {
-    if (tail[i] === 0x50 && tail[i+1] === 0x4b && tail[i+2] === 0x05 && tail[i+3] === 0x06) {
-      eocdPos = i; break;
-    }
-  }
-  if (eocdPos === -1) throw new Error('EOCD not found in ZIP');
-
-  let cdSize   = tail.readUInt32LE(eocdPos + 12);
-  let cdOffset = tail.readUInt32LE(eocdPos + 16);
-
-  // ZIP64 support
-  if (cdOffset === 0xFFFFFFFF) {
-    const lp = eocdPos - 20;
-    if (lp >= 0 && tail[lp] === 0x50 && tail[lp+1] === 0x4b && tail[lp+2] === 0x06 && tail[lp+3] === 0x07) {
-      const z64Off = Number(tail.readBigUInt64LE(lp + 8));
-      const z64Buf = await httpsRange(finalUrl, z64Off, z64Off + 55);
-      cdSize   = Number(z64Buf.readBigUInt64LE(40));
-      cdOffset = Number(z64Buf.readBigUInt64LE(48));
-    } else throw new Error('ZIP64 locator not found');
-  }
-
-  // Download and parse Central Directory
-  const cd  = await httpsRange(finalUrl, cdOffset, cdOffset + cdSize - 1);
-  let pos = 0, found = null;
-  const wanted = String(entryName || '').replace(/\\/g, '/').toLowerCase();
-  while (pos + 46 <= cd.length) {
-    if (cd.readUInt32LE(pos) !== 0x02014b50) break;
-    const compression    = cd.readUInt16LE(pos + 10);
-    const compressedSize = cd.readUInt32LE(pos + 20);
-    const fileNameLen    = cd.readUInt16LE(pos + 28);
-    const extraLen       = cd.readUInt16LE(pos + 30);
-    const commentLen     = cd.readUInt16LE(pos + 32);
-    let   localOffset    = cd.readUInt32LE(pos + 42);
-    const fileName       = cd.slice(pos + 46, pos + 46 + fileNameLen).toString('utf8');
-
-    // ZIP64 local offset in extra field
-    if (localOffset === 0xFFFFFFFF) {
-      let ep = pos + 46 + fileNameLen, ee = ep + extraLen;
-      while (ep + 4 <= ee) {
-        const hid = cd.readUInt16LE(ep), ds = cd.readUInt16LE(ep + 2);
-        if (hid === 0x0001) {
-          let zp = ep + 4;
-          if (cd.readUInt32LE(pos + 24) === 0xFFFFFFFF) zp += 8;
-          if (cd.readUInt32LE(pos + 20) === 0xFFFFFFFF) zp += 8;
-          localOffset = Number(cd.readBigUInt64LE(zp));
-          break;
-        }
-        ep += 4 + ds;
-      }
-    }
-
-    const normalized = fileName.replace(/\\/g, '/');
-    const normalizedBase = normalized.includes('/') ? normalized.split('/').pop() : normalized;
-    if (normalized.toLowerCase() === wanted || normalizedBase.toLowerCase() === wanted) {
-      found = { compression, compressedSize, localOffset }; break;
-    }
-    pos += 46 + fileNameLen + extraLen + commentLen;
-  }
-  if (!found) throw new Error(`${entryName} not found in remote ZIP`);
-
-  // Read local file header to get exact data offset
-  const lh          = await httpsRange(finalUrl, found.localOffset, found.localOffset + 29);
-  const dataStart   = found.localOffset + 30 + lh.readUInt16LE(26) + lh.readUInt16LE(28);
-  const compressed  = await httpsRange(finalUrl, dataStart, dataStart + found.compressedSize - 1);
-
-  if (found.compression === 0) return compressed;
-  if (found.compression === 8) return zlib.inflateRawSync(compressed);
-  throw new Error(`Unsupported compression method: ${found.compression}`);
-}
 
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -876,19 +688,29 @@ ipcMain.handle('load-workshop-map', async (_, { zipFileName, targetMapFile }) =>
   try {
     const AdmZip      = require('adm-zip');
     const workshopDir = path.join(app.getAppPath(), 'FilesChanges', 'Workshop', 'Enable');
+    const disableDir  = path.join(app.getAppPath(), 'FilesChanges', 'Workshop', 'Disable');
     const zipPath     = path.join(workshopDir, zipFileName);
     const cookedDir   = findRLCookedDir();
     if (!cookedDir) return { success: false, error: 'Rocket League not found' };
+
+    if (!fs.existsSync(disableDir)) fs.mkdirSync(disableDir, { recursive: true });
+
+    // Backup original RL map before overwriting
+    const originalMapPath = path.join(cookedDir, targetMapFile);
+    const backupPath      = path.join(disableDir, targetMapFile);
+    if (fs.existsSync(originalMapPath) && !fs.existsSync(backupPath)) {
+      fs.copyFileSync(originalMapPath, backupPath);
+    }
 
     // Extract workshop .udk from zip and overwrite the RL map
     const zip      = new AdmZip(zipPath);
     const mapEntry = zip.getEntries().find(e => /\.(udk|upk|umap)$/i.test(e.entryName) && !e.isDirectory);
     if (!mapEntry) return { success: false, error: 'No .udk file found in the zip' };
-    fs.writeFileSync(path.join(cookedDir, targetMapFile), zip.readFile(mapEntry));
+    fs.writeFileSync(originalMapPath, zip.readFile(mapEntry));
 
     // Save install record
     const installs = readInstalls();
-    installs[zipFileName] = { targetMapFile, installedAt: new Date().toISOString() };
+    installs[zipFileName] = { targetMapFile, backupPath, installedAt: new Date().toISOString() };
     writeInstalls(installs);
 
     return { success: true };
@@ -906,8 +728,14 @@ ipcMain.handle('revert-workshop-map', async (_, { zipFileName }) => {
     const cookedDir = findRLCookedDir();
     if (!cookedDir) return { success: false, error: 'Rocket League not found' };
 
-    const fileBuffer = await extractFromRemoteZip(ORIGINAL_MAPS_URL, record.targetMapFile);
-    fs.writeFileSync(path.join(cookedDir, record.targetMapFile), fileBuffer);
+    // Restore from local backup in Disable/
+    const backupPath = record.backupPath
+      || path.join(app.getAppPath(), 'FilesChanges', 'Workshop', 'Disable', record.targetMapFile);
+
+    if (!fs.existsSync(backupPath)) return { success: false, error: 'Backup not found in Disable folder' };
+
+    fs.copyFileSync(backupPath, path.join(cookedDir, record.targetMapFile));
+    fs.unlinkSync(backupPath);
 
     delete installs[zipFileName];
     writeInstalls(installs);
@@ -947,8 +775,13 @@ ipcMain.on('revert-all-workshop-maps', async (event) => {
       const targetMapFile = record?.targetMapFile;
       if (!targetMapFile) continue;
 
-      const fileBuffer = await extractFromRemoteZip(ORIGINAL_MAPS_URL, targetMapFile);
-      fs.writeFileSync(path.join(cookedDir, targetMapFile), fileBuffer);
+      const backupPath = record.backupPath
+        || path.join(app.getAppPath(), 'FilesChanges', 'Workshop', 'Disable', targetMapFile);
+
+      if (fs.existsSync(backupPath)) {
+        fs.copyFileSync(backupPath, path.join(cookedDir, targetMapFile));
+        fs.unlinkSync(backupPath);
+      }
       delete installs[zipFileName];
 
       done += 1;
