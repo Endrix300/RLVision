@@ -1,7 +1,7 @@
 node_modules/
 dist/
 .claude/
-FilesChanges/
+FilesChanges/WorkShop/Enable/
 notify.log
 __pycache__/
 *.pyc
