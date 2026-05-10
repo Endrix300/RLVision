@@ -36,18 +36,43 @@ function stripUpkExt(filename) {
   return String(filename || '').replace(/\.upk$/i, '');
 }
 
+// When packaged, RLUPKTools is extracted from the ASAR into app.asar.unpacked/
+// so Python can access it as a real file on disk.
+function getRlUpkToolsScriptPath() {
+  if (app.isPackaged) {
+    return path.join(process.resourcesPath, 'app.asar.unpacked', 'src', 'RLUPKTools', 'main.py');
+  }
+  return path.join(app.getAppPath(), 'src', 'RLUPKTools', 'main.py');
+}
+
+// Detect the Python executable available on the system (python or python3).
+// Throws a user-friendly error if neither is found.
+function getPythonExecutable() {
+  for (const exe of ['python', 'python3']) {
+    try {
+      execSync(`${exe} --version`, { stdio: 'ignore', timeout: 5000, shell: true });
+      return exe;
+    } catch {}
+  }
+  throw new Error(
+    'Python is not installed or not in PATH.\n' +
+    'Download it from https://www.python.org/downloads/ and make sure to check "Add Python to PATH" during installation.'
+  );
+}
+
 function runLocalRlUpkToolsSwap({ cookedDir, donorFilename, targetFilename }) {
-  const scriptPath = path.join(app.getAppPath(), 'src', 'RLUPKTools', 'main.py');
+  const scriptPath = getRlUpkToolsScriptPath();
   if (!fs.existsSync(scriptPath)) {
     throw new Error(`RLUPKTools script not found: ${scriptPath}`);
   }
 
   const cooked = String(cookedDir || '').trim();
-  const donor = stripUpkExt(donorFilename);
+  const donor  = stripUpkExt(donorFilename);
   const target = stripUpkExt(targetFilename);
   if (!cooked || !donor || !target) throw new Error('Invalid swap parameters');
 
-  const cmd = `python "${scriptPath}" --cooked-dir "${cooked}" swap --source "${donor}" --target "${target}"`;
+  const python = getPythonExecutable();
+  const cmd    = `${python} "${scriptPath}" --cooked-dir "${cooked}" swap --source "${donor}" --target "${target}"`;
 
   console.log(`[RLUPKTools] Executing: ${cmd}`);
 
@@ -493,15 +518,16 @@ function normalizeSimpleCatalog(catalog, arrKey, nameKey, folderKey, outputFileK
 
 function resolveLocalItemsJsonPath() {
   const candidates = [
+    // Prefer the real unpacked path when running as a packaged app
+    app.isPackaged && path.join(process.resourcesPath, 'app.asar.unpacked', 'src', 'RLUPKTools', 'items.json'),
     path.join(app.getAppPath(), 'src', 'RLUPKTools', 'items.json'),
     path.join(app.getAppPath(), 'RLUPKTools', 'items.json'),
     path.join(__dirname, 'RLUPKTools', 'items.json'),
-    path.join(__dirname, 'RLUPKTools', 'items.json'),
-  ];
+  ].filter(Boolean);
 
-  for (const p of candidates) {
+  for (const candidate of candidates) {
     try {
-      if (fs.existsSync(p)) return p;
+      if (fs.existsSync(candidate)) return candidate;
     } catch {}
   }
   return null;

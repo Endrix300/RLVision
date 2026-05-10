@@ -23,6 +23,9 @@
     "files": [
       "**/*",
       "!node_modules/.cache/**"
+    ],
+    "asarUnpack": [
+      "src/RLUPKTools/**"
     ]
   },
   "dependencies": {
