@@ -73,10 +73,10 @@ function handleRLEvent(message) {
   if (Event === 'UpdateState' && Data && Data.Players) {
     if (Data.Game) S.lastTimeSeconds = Data.Game.TimeSeconds ?? null;
 
-    // Detect observer mode: all players have Boost field (SPECTATOR fields)
-    const allHaveBoost = Data.Players.length > 0 && Data.Players.every(p => p.Boost !== undefined);
-    if (allHaveBoost && !S.playerID && S.roundStarted) {
-      // Observer mode: set a dummy playerID so the rest of the logic can proceed
+    // Detect spectator/observer mode: the game is running but we have no target car.
+    // Requires at least 2 players to avoid false-positives during match loading
+    // (early UpdateState packets may only contain 1 player before others join).
+    if (S.roundStarted && !S.playerID && Data.Players.length >= 2 && Data.Game && !Data.Game.bHasTarget) {
       S.playerID  = '__observer__';
       S.myTeamNum = null;
       console.log('🎥 Observer mode — skipping player identification');
