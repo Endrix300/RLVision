@@ -45,7 +45,7 @@ function updateOverlay(state) {
 
     // Set badge text and apply the appropriate color class
     changeEl.textContent = diff > 0 ? `+${diff}` : `${diff}`;
-    changeEl.className = `ov-mmr-change show ${diff > 0 ? 'up' : 'down'}`;
+    changeEl.className = `ov-change show ${diff > 0 ? 'up' : 'down'}`;
 
     // Force a reflow to restart the CSS pop animation from scratch
     mmrEl.classList.remove('pop');
