@@ -142,7 +142,7 @@ function narrowHtmlForRankImages(html) {
     'playlist rating',
     'rank icons',
     'rated playlists',
-    // Ajouts pour couvrir plus de layouts rlstats
+    // Additional markers to cover more rlstats page layouts
     '1v1 duel',
     '2v2 doubles',
     '3v3 standard',
@@ -172,7 +172,7 @@ function parseRankImageUrlFromRlstatsHtml(html, playlist) {
   console.log('[rank-img] chunk length:', chunk.length);
   console.log('[rank-img] chunk preview (first 300):', chunk.substring(0, 300));
 
-  // Regex qui accepte guillemets ET apostrophes
+  // Regex that accepts both double quotes and single quotes
   const re = /src=["']([^"']*s32rank(\d+)[^"']*\.png)["'][^>]*alt=["']([^"']*)["']/gi;
   const matches = [];
   let m;
@@ -190,7 +190,7 @@ function parseRankImageUrlFromRlstatsHtml(html, playlist) {
     } else if (src.startsWith('/images/')) {
       url = 'https://rlstats.net' + src;
     } else {
-      // Chemin local Chrome → reconstruit depuis le numéro
+      // Local Chrome path — rebuild the URL from the rank number
       url = `https://rlstats.net/images/ranks/s32rank${num}.png`;
     }
 
@@ -211,7 +211,7 @@ function parseRankImageUrlFromRlstatsHtml(html, playlist) {
   return picked;
 }
 
-// Renomme l'ancienne fonction en fallback
+// Fallback image extraction when the primary s32rank regex finds no matches
 function parseRankImageUrlFallback(chunk, playlist) {
   const raw = extractHttpsImageUrls(chunk);
   const ordered = [];
@@ -303,7 +303,7 @@ async function rlstatsHtmlThroughHiddenWindow(url) {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      offscreen: true,          // ← rendu offscreen, pas de GPU
+      offscreen: true,          // Render offscreen — no GPU window shown
       backgroundThrottling: false,
     },
   });
@@ -380,18 +380,18 @@ function applyFetchedMMR(isMe, fromMatch, realMMR, sourceLabel, rankImageUrl = n
   console.log(`MMR OK (${sourceLabel}):`, realMMR);
 
   if (isMe) {
-    // Met à jour mmrGained seulement si même playlist
+    // Only update mmrGained when the playlist matches the one we already have an MMR for
     if (fromMatch && S.state.mmr !== 0) {
       S.state.mmrGained += realMMR - S.state.mmr;
     } else if (!fromMatch && S.state.mmr !== 0 && playlist && S.state.lastMmrPlaylist === playlist) {
-      // Fetch initial en début de match : même playlist → update session
+      // Initial fetch at match start on the same playlist — carry the delta into the session
       const diff = realMMR - S.state.mmr;
       S.state.mmrGained += diff;
       console.log(`MMR session updated (same playlist ${playlist}): ${diff > 0 ? '+' : ''}${diff}`);
     }
 
     S.state.mmr = realMMR;
-    S.state.lastMmrPlaylist = playlist; // ← mémorise la playlist du MMR actuel
+    S.state.lastMmrPlaylist = playlist; // Remember the playlist this MMR belongs to
     S.state.rankImageUrl = rankImageUrl || null;
     broadcastState();
     sendToMain('mmr-source', 'real');
@@ -533,7 +533,7 @@ async function fetchRealMMRWithRetry(playlist, retries = 3, delay = 20000) {
 
   for (let i = 0; i < retries; i++) {
     await new Promise((res) => setTimeout(res, i === 0 ? 10000 : delay));
-    await fetchRealMMR(true, S.playerID, playlist); // ← fromMatch = true
+    await fetchRealMMR(true, S.playerID, playlist); // ← fromMatch=true is set when called after a match ends
 
     if (S.state.mmr !== mmrBeforeMatch) {
       console.log('MMR delta:', S.state.mmr - mmrBeforeMatch > 0 ? `+${S.state.mmr - mmrBeforeMatch}` : S.state.mmr - mmrBeforeMatch);

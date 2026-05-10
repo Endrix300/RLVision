@@ -343,7 +343,7 @@
       applyConfig(msg.prodConfig);
     }
 
-    // 🔴 HIDE overlay complet (quand RL pas focus)
+    // 🔴 Hide entire overlay when Rocket League loses focus
     if (msg.type === 'hide-overlay') {
       document.getElementById('scoreboard').style.display = 'none';
       document.getElementById('team-left').style.display = 'none';
@@ -352,14 +352,14 @@
       document.getElementById('boost-circle').style.display = 'none';
     }
 
-    // 🟢 SHOW overlay (quand RL revient)
+    // 🟢 Restore overlay when Rocket League regains focus
     if (msg.type === 'show-overlay') {
       document.getElementById('scoreboard').style.display = 'flex';
       document.getElementById('team-left').style.display = 'block';
       document.getElementById('team-right').style.display = 'block';
     }
 
-    // 🎯 Focus uniquement
+    // 🎯 Focus bar only
     if (msg.type === 'hide-focus') {
       document.getElementById('focus-bar').style.display = 'none';
       document.getElementById('boost-circle').style.display = 'none';

@@ -71,10 +71,10 @@ function updateOverlay(state) {
       rk.onload  = () => { rk.style.display = 'block'; };
       if (rk.getAttribute('data-src-active') !== state.rankImageUrl) {
         rk.setAttribute('data-src-active', state.rankImageUrl);
-        rk.style.display = 'block'; // ← force AVANT src (cache ou pas)
+        rk.style.display = 'block'; // Force display before setting src (handles both cached and fresh loads)
         rk.src = state.rankImageUrl;
       } else {
-        rk.style.display = 'block'; // ← déjà chargée, force l'affichage
+        rk.style.display = 'block'; // Already loaded — force display
       }
     } else {
       rk.removeAttribute('data-src-active');

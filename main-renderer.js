@@ -636,7 +636,7 @@ function renderRemoteCategory(category) {
 
   listEl.innerHTML = '';
 
-  // Trie : activés en premier
+  // Sort: enabled items first
   const sorted = [...filtered].sort((a, b) => {
     const aEnabled = isRemoteItemEnabled(category, a.id) ? 1 : 0;
     const bEnabled = isRemoteItemEnabled(category, b.id) ? 1 : 0;
@@ -1093,7 +1093,7 @@ function buildInstalledCard(map) {
   return card;
 }
 
-// ── Sélecteur de map RL ────────────────────────────────────────────────────────
+// ── RL Map Selector ───────────────────────────────────────────────────────────
 
 let currentWorkshopMap = null;
 let rlMapsCache        = [];
@@ -1356,7 +1356,7 @@ function updateUI(state) {
         rk.style.display = 'block'; // ← force display AVANT de setter src
         rk.src = state.rankImageUrl;
       } else {
-        rk.style.display = 'block'; // ← déjà en cache, force quand même
+        rk.style.display = 'block'; // Already cached — force display anyway
       }
       rk.onerror = () => { rk.style.display = 'none'; };
     } else {
@@ -1489,8 +1489,8 @@ let isBinding = false;
 
 function startBinding() {
   isBinding = true;
-  document.getElementById('bindStatus').textContent  = '⏳ Appuie sur une touche clavier ou bouton manette...';
-  document.getElementById('bindBtn').textContent     = 'Annuler';
+  document.getElementById('bindStatus').textContent  = '⏳ Press a keyboard key or gamepad button...';
+  document.getElementById('bindBtn').textContent     = 'Cancel';
   document.getElementById('bindBtn').onclick         = cancelBinding;
   ipcRenderer.send('start-binding');
 }
@@ -1505,13 +1505,13 @@ function cancelBinding() {
 
 function clearBinding() {
   ipcRenderer.send('clear-binding');
-  document.getElementById('scoreboardKeyDisplay').textContent = 'Non configuré';
+  document.getElementById('scoreboardKeyDisplay').textContent = 'Not configured';
 }
 
 ipcRenderer.on('binding-captured', (_, key) => {
   isBinding = false;
   document.getElementById('scoreboardKeyDisplay').textContent = key.label;
-  document.getElementById('bindStatus').textContent           = '✅ Touche enregistrée';
+  document.getElementById('bindStatus').textContent           = '✅ Key saved';
   document.getElementById('bindBtn').textContent              = 'Bind';
   document.getElementById('bindBtn').onclick                  = startBinding;
 });
@@ -1591,10 +1591,10 @@ document.getElementById('toggle-prod-overlay').addEventListener('click', () => {
   ipcRenderer.send('toggle-prod-overlay', prodOverlayVisible);
   const btn = document.getElementById('toggle-prod-overlay');
   if (prodOverlayVisible) {
-    btn.textContent  = '⬛ Masquer overlay';
+    btn.textContent  = '⬛ Hide overlay';
     btn.className    = 'btn btn-danger';
   } else {
-    btn.textContent  = '🟩 Afficher overlay';
+    btn.textContent  = '🟩 Show overlay';
     btn.className    = 'btn btn-ghost';
   }
 });
@@ -1605,7 +1605,7 @@ document.getElementById('toggle-recap-overlay').addEventListener('click', () => 
   recapAutoEnabled = !recapAutoEnabled;
   ipcRenderer.send('toggle-recap-overlay', recapAutoEnabled);
   const btn = document.getElementById('toggle-recap-overlay');
-  btn.textContent = recapAutoEnabled ? '📊 Recap automatique : ON' : '📊 Recap automatique : OFF';
+  btn.textContent = recapAutoEnabled ? '📊 Auto recap: ON' : '📊 Auto recap: OFF';
   btn.className   = recapAutoEnabled ? 'btn btn-primary' : 'btn btn-ghost';
 });
 
@@ -1623,11 +1623,11 @@ async function loadSettingsTab() {
   const input      = document.getElementById('settingsCookedInput');
   const status     = document.getElementById('settingsPathStatus');
 
-  detectedEl.textContent = res.autoDetected || 'Non détecté';
+  detectedEl.textContent = res.autoDetected || 'Not detected';
   input.value            = res.custom || res.autoDetected || '';
   status.textContent     = res.active
-    ? (res.custom ? '✓ Chemin personnalisé actif' : '✓ Détection automatique active')
-    : '⚠ Aucun chemin trouvé';
+    ? (res.custom ? '✓ Custom path active' : '✓ Auto-detection active')
+    : '⚠ No path found';
   status.className = 'path-status ' + (res.active ? 'ok' : 'err');
 }
 
@@ -1642,8 +1642,8 @@ async function applyCookedPath() {
   const res = await ipcRenderer.invoke('set-cooked-path', { cookedPath: val });
   if (res.success) {
     status.textContent = res.cleared
-      ? '✓ Réinitialisé — détection automatique active'
-      : '✓ Chemin sauvegardé';
+      ? '✓ Reset — using auto-detection'
+      : '✓ Path saved';
     status.className = 'path-status ok';
     if (res.active) input.value = res.active;
   } else {

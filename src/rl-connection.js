@@ -126,7 +126,7 @@ function handleRLEvent(message) {
 
       if (S.playerOverlaysEnabled) createPlayerOverlays();
 
-      // ← Fetch MMR des autres joueurs ICI avec la bonne playlist
+      // Fetch MMR for all other players now that the playlist is known
       for (const player of S.gamePlayers) {
         if (player.primaryId === S.playerID || !player.primaryId) continue;
         fetchRealMMR(false, player.primaryId, S.currentPlaylist).then(mmr => {
@@ -268,7 +268,7 @@ function handleRLEvent(message) {
   }
 
   // ── Production server hook ───────────────────────────────────────────────────
-  // Doit rester en dernier pour que le state S soit déjà mis à jour ci-dessus
+  // Must run last so that the state above is already updated before the server reads it
   prodServer.handleRLUpdate(Event, Data);
 }
 

@@ -58,7 +58,7 @@ def process_command(cmd):
         return {
             "success": ok,
             "logs": log_lines,
-            "message": "OK - swap applique." if ok else "ERREUR - swap echoue."
+            "message": "OK - swap applied." if ok else "ERROR - swap failed."
         }
     except Exception as e:
         import traceback

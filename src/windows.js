@@ -21,7 +21,7 @@ function createMainWindow() {
     webPreferences: {
       nodeIntegration  : true,
       contextIsolation : false,
-      webSecurity: false,  // ← ajoute cette ligne
+      webSecurity: false,
     },
   });
 
@@ -101,7 +101,7 @@ function createOverlayWindow() {
     webPreferences: {
       nodeIntegration  : true,
       contextIsolation : false,
-      webSecurity: false,  // ← ajoute cette ligne
+      webSecurity: false,
     },
   });
 

@@ -152,13 +152,13 @@
 
     .tab-panel.active { display: flex; }
 
-    /* User & Production scrollent au niveau panel */
+    /* User & Production panels scroll at panel level */
     #tab-user, #tab-production { overflow-y: auto !important; padding: 16px; gap: 12px; }
 
-    /* Empêche les sections de se comprimer — force l'overflow + scroll */
+    /* Prevent sections from shrinking — enforce overflow + scroll */
     #tab-user > *, #tab-production > * { flex-shrink: 0; }
 
-    /* Preset & Workshop délèguent le scroll à leurs enfants */
+    /* Preset & Workshop panels delegate scrolling to their children */
     #tab-cardesign, #tab-workshop { padding: 0; gap: 0; }
 
     /* Settings same scroll pattern as User */
@@ -609,7 +609,7 @@
       min-height: 0;
     }
 
-    /* classes générées par main-renderer.js */
+    /* Classes generated dynamically by main-renderer.js */
     .remote-item {
       display: flex;
       justify-content: space-between;
@@ -717,7 +717,7 @@
       min-height: 0;
     }
 
-    /* Bouton Play dans les cartes My Maps */
+    /* Play button in the My Maps cards */
     #play-grid .btn.btn-primary {
       border-top: 1px solid rgba(47,129,247,0.25) !important;
       border-radius: 0 0 8px 8px !important;
@@ -1285,13 +1285,13 @@
       <div class="section-title">Rocket League — Cooked Path</div>
     </div>
     <div class="section-body">
-      <label class="field-label">Chemin détecté automatiquement</label>
+      <label class="field-label">Auto-detected path</label>
       <div class="detected-path" id="settingsDetectedPath">—</div>
-      <label class="field-label">Chemin personnalisé</label>
+      <label class="field-label">Custom path</label>
       <div class="path-input-row">
         <input type="text" id="settingsCookedInput" placeholder="C:\Program Files\...\CookedPCConsole" />
         <button class="btn btn-primary" onclick="applyCookedPath()">Apply</button>
-        <button class="btn btn-ghost"   onclick="resetCookedPath()"  title="Revenir à la détection auto">↺</button>
+        <button class="btn btn-ghost"   onclick="resetCookedPath()"  title="Reset to auto-detection">↺</button>
       </div>
       <div class="path-status info" id="settingsPathStatus"></div>
     </div>

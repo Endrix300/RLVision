@@ -3,7 +3,7 @@
 const state = {
   mmr          : 0,
   rankImageUrl : null,
-  lastMmrPlaylist : null,  // ← ajoute ça
+  lastMmrPlaylist : null,  // Tracks the playlist for which the current MMR was fetched
   wins         : 0,
   losses       : 0,
   streak       : 0,

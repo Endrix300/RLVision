@@ -60,7 +60,7 @@ function runLocalRlUpkToolsSwap({ cookedDir, donorFilename, targetFilename }) {
 
   console.log('[RLUPKTools] Output:', result);
 
-  if (!result.includes('OK - swap applique')) {
+  if (!result.includes('OK - swap applied')) {
     throw new Error(result || 'Swap failed');
   }
 
@@ -311,7 +311,7 @@ ipcMain.handle('set-cooked-path', (_, { cookedPath }) => {
       fs.writeFileSync(STATE_FILE, JSON.stringify(existing), 'utf8');
       return { success: true, cleared: true, active: findRLCookedDir() };
     }
-    if (!fs.existsSync(trimmed)) return { success: false, error: 'Ce dossier n\'existe pas' };
+    if (!fs.existsSync(trimmed)) return { success: false, error: 'Directory does not exist' };
     S.customCookedPath = trimmed;
     existing.customCookedPath = trimmed;
     fs.writeFileSync(STATE_FILE, JSON.stringify(existing), 'utf8');
@@ -355,7 +355,7 @@ ipcMain.on('toggle-boost', (event, enabled) => {
 const https = require('https');
 let remoteCatalogCache = null;
 
-const SKINS_INDEX = require('./skins-index.json'); // ← mets skins-index.json dans src/
+const SKINS_INDEX = require('./skins-index.json');
 
 function httpsGet(urlOrOptions) {
   return new Promise((resolve, reject) => {
@@ -466,7 +466,7 @@ function normalizeSkinsCatalog(catalog) {
         subtitle: skin.ingame_body || skin.car_folder || '',
         car: skin.car_folder || car?.car || 'Unknown',
         outputFile: skin.output_upk_file || remoteFiles[0]?.filename || '',
-        skinOriginale: skin.skin_originale || '',  // ← ajoute ça
+        skinOriginale: skin.skin_originale || '',
         remoteFiles: remoteFiles.map((f) => ({ filename: f.filename, remote_path: f.remote_path })),
       });
     });
@@ -555,8 +555,8 @@ function mapSlotsToPresetCategories(bySlot) {
     return v === 'boost' || v === 'boosts' || v === 'rocket boost' || v === 'rocket boosts';
   });
 
-  // Local items.json doesn't include a dedicated car field for decals.
-  // Derive it from the Product label when available: "Fennec: Stripes" -> car="Fennec".
+  // items.json has no dedicated car field for decals.
+  // Derive the car name from the Product label when available: "Fennec: Stripes" -> car="Fennec".
   skins.forEach((item) => {
     if (item && !item.car) {
       const product = String(item.name || '').trim();
@@ -1116,7 +1116,7 @@ ipcMain.on('revert-all-remote-items', async (event) => {
 function downloadLogo(imageUrl, team) {
   return new Promise((resolve, reject) => {
     const options = {
-      hostname: '127.0.0.1',  // ✅ IPv4 forcé, pas 'localhost'
+      hostname: '127.0.0.1',  // ✅ Force IPv4 — avoids 'localhost' IPv6 resolution
       port: 3000,
       path: `/download-logo?url=${encodeURIComponent(imageUrl)}&team=${team}`,
       method: 'GET',
@@ -1135,16 +1135,16 @@ function downloadLogo(imageUrl, team) {
 
 ipcMain.on('prod-config-update', async (_, config) => {
 
-  // Logo bleu
+  // Blue team logo
   if (config.blueLogo) {
     if (config.blueLogo.startsWith('http') && !config.blueLogo.startsWith('http://localhost')) {
       try {
         const data = await downloadLogo(config.blueLogo, 'blue');
         if (data.success) config.blueLogo = data.url;
       } catch(e) { console.error('Blue logo download failed:', e.message); }
-    
+
     } else if (!config.blueLogo.startsWith('http')) {
-      // ✅ Chemin local — copie dans assets
+      // Local path — copy into the production assets folder
       config.blueLogo = config.blueLogo.trim().replace(/^["']|["']$/g, '');
       try {
         const destDir  = path.join(__dirname, 'production', 'assets');
@@ -1156,16 +1156,16 @@ ipcMain.on('prod-config-update', async (_, config) => {
     }
   }
 
-  // Logo orange
+  // Orange team logo
   if (config.orangeLogo) {
     if (config.orangeLogo.startsWith('http') && !config.orangeLogo.startsWith('http://localhost')) {
       try {
         const data = await downloadLogo(config.orangeLogo, 'orange');
         if (data.success) config.orangeLogo = data.url;
-      } catch(e) { console.error('Orange logo copy failed:', e.message); }
+      } catch(e) { console.error('Orange logo download failed:', e.message); }
 
     } else if (!config.orangeLogo.startsWith('http')) {
-      // ✅ Chemin local — copie dans assets
+      // Local path — copy into the production assets folder
       config.orangeLogo = config.orangeLogo.trim().replace(/^["']|["']$/g, '');
       try {
         const destDir  = path.join(__dirname, 'production', 'assets');

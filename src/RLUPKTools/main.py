@@ -112,7 +112,7 @@ def cmd_swap(args, items):
     log_entry({"op": "swap", "source": source.product, "source_id": source.id,
                "target": target.product, "target_id": target.id,
                "target_pkg": target.asset_package, "ok": ok})
-    print("OK - swap applique." if ok else "ERREUR - swap echoue.")
+    print("OK - swap applied." if ok else "ERROR - swap failed.")
     return 0 if ok else 1
 
 
@@ -143,7 +143,7 @@ def _do_revert(target, cooked_dir: Path = COOKED) -> int:
     ok = bool(paths)
     log_entry({"op": "revert", "target": target.product,
                "target_pkg": target.asset_package, "ok": ok})
-    print("Revert OK." if ok else "ERREUR revert.")
+    print("Revert OK." if ok else "ERROR - revert failed.")
     return 0 if ok else 1
 
 
