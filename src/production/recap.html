@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>RLVision Recap</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --blue:   #1e64d2;
+    --orange: #dc6414;
+  }
+
+  body {
+    width: 1920px;
+    height: 1080px;
+    overflow: hidden;
+    background: transparent;
+    font-family: 'Segoe UI', Arial, sans-serif;
+  }
+
+  /* ── Wrapper ─────────────────────────────────────────────────────────── */
+
+  #recap {
+    display: none;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    background: #0a0a10;
+  }
+
+  #recap.visible { display: flex; }
+
+  /* ── Event bar ───────────────────────────────────────────────────────── */
+
+  #event-bar {
+    text-align: center;
+    font-size: 13px;
+    font-weight: 700;
+    letter-spacing: 2.5px;
+    color: #999;
+    padding: 10px 20px;
+    text-transform: uppercase;
+    background: rgba(0,0,0,0.4);
+  }
+
+  /* ── Teams header ────────────────────────────────────────────────────── */
+
+  #teams-row {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    height: 88px;
+  }
+
+  .team-banner {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 0 24px;
+    overflow: hidden;
+  }
+
+  .team-banner.blue   { background: var(--blue); flex-direction: row; }
+  .team-banner.orange { background: var(--orange); flex-direction: row-reverse; }
+
+  .team-logo {
+    height: 56px;
+    width:  56px;
+    object-fit: contain;
+    flex-shrink: 0;
+  }
+
+  .team-info { display: flex; flex-direction: column; }
+  .team-banner.orange .team-info { align-items: flex-end; }
+
+  .team-abbr {
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1.5px;
+    color: rgba(255,255,255,0.65);
+    text-transform: uppercase;
+  }
+
+  .team-fullname {
+    font-size: 26px;
+    font-weight: 900;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    color: #fff;
+    white-space: nowrap;
+  }
+
+  /* ── Score box ───────────────────────────────────────────────────────── */
+
+  #score-box {
+    display: flex;
+    align-items: stretch;
+    background: #0d0d0d;
+    min-width: 240px;
+  }
+
+  .score-num {
+    font-size: 56px;
+    font-weight: 900;
+    width: 80px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .score-num.blue   { color: #5ba8ff; }
+  .score-num.orange { color: #ff8c42; }
+
+  #game-info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 0 16px;
+    border-left:  1px solid #222;
+    border-right: 1px solid #222;
+    gap: 2px;
+  }
+
+  #game-num    { font-size: 15px; font-weight: 900; letter-spacing: 1px; color: #fff; }
+  #game-format { font-size: 11px; font-weight: 700; letter-spacing: 0.5px; color: #666; }
+
+  /* ── Series lead bar ─────────────────────────────────────────────────── */
+
+  #series-bar {
+    text-align: center;
+    background: rgba(0,0,0,0.55);
+    padding: 7px 20px;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: #ccc;
+    text-transform: uppercase;
+  }
+
+  /* ── Stats grid ──────────────────────────────────────────────────────── */
+
+  #stats-area {
+    padding: 18px 40px 28px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+  }
+
+  .stat-table {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr) 220px repeat(3, 1fr);
+    gap: 0 6px;
+    align-content: start;
+  }
+
+  /* player name headers */
+  .ph {
+    text-align: center;
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    padding: 6px 4px 10px;
+    text-transform: uppercase;
+  }
+
+  .ph.blue   { color: #5ba8ff; border-bottom: 2px solid var(--blue); }
+  .ph.orange { color: #ff8c42; border-bottom: 2px solid var(--orange); }
+  .ph.center { border-bottom: 2px solid #222; }
+
+  /* stat value cells */
+  .sv {
+    text-align: center;
+    font-size: 30px;
+    font-weight: 700;
+    color: #d0d0d0;
+    padding: 10px 4px;
+  }
+
+  .sv.mvp-blue   { color: #5ba8ff; font-weight: 900; }
+  .sv.mvp-orange { color: #ff8c42; font-weight: 900; }
+
+  /* center stat cell */
+  .sc {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    padding: 6px 8px;
+  }
+
+  .sc-label {
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    color: #666;
+    text-transform: uppercase;
+  }
+
+  .bar-track {
+    width: 100%;
+    height: 5px;
+    background: #1a1a1a;
+    border-radius: 3px;
+    display: flex;
+    overflow: hidden;
+  }
+
+  .bar-blue {
+    height: 100%;
+    background: var(--blue);
+    border-radius: 3px 0 0 3px;
+    transition: width 0.6s ease;
+  }
+
+  .bar-orange {
+    height: 100%;
+    background: var(--orange);
+    border-radius: 0 3px 3px 0;
+    transition: width 0.6s ease;
+  }
+</style>
+</head>
+<body>
+
+<div id="recap">
+  <div id="event-bar">—</div>
+
+  <div id="teams-row">
+    <div class="team-banner blue" id="blue-banner">
+      <img class="team-logo" id="blue-logo" src="" alt="">
+      <div class="team-info">
+        <div class="team-fullname" id="blue-name">—</div>
+      </div>
+    </div>
+
+    <div id="score-box">
+      <div class="score-num blue" id="score-blue">0</div>
+      <div id="game-info">
+        <div id="game-num">GAME 1</div>
+        <div id="game-format">BO5</div>
+      </div>
+      <div class="score-num orange" id="score-orange">0</div>
+    </div>
+
+    <div class="team-banner orange" id="orange-banner">
+      <img class="team-logo" id="orange-logo" src="" alt="">
+      <div class="team-info">
+        <div class="team-fullname" id="orange-name">—</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="series-bar">—</div>
+
+  <div id="stats-area">
+    <div class="stat-table" id="stat-table"></div>
+  </div>
+</div>
+
+<script>
+  const WS = 'ws://127.0.0.1:3000';
+  let ws;
+
+  function connect() {
+    ws = new WebSocket(WS);
+    ws.onmessage = (e) => {
+      const msg = JSON.parse(e.data);
+      if (msg.type === 'recap')      showRecap(msg.data);
+      if (msg.type === 'hide-recap') document.getElementById('recap').classList.remove('visible');
+      if (msg.type === 'init' || msg.type === 'config') applyConfig(msg.prodConfig);
+    };
+    ws.onclose = () => setTimeout(connect, 2000);
+  }
+  connect();
+
+  let cfg = {};
+
+  function applyConfig(c) {
+    if (!c) return;
+    cfg = c;
+  }
+
+  function showRecap(data) {
+    const el = document.getElementById('recap');
+    el.classList.add('visible');
+    render(data);
+  }
+
+  function render(data) {
+    // Event bar
+    const parts = [cfg.eventName || data.eventName, cfg.round || data.round].filter(Boolean);
+    document.getElementById('event-bar').textContent = parts.join(' | ').toUpperCase();
+
+    // Teams
+    document.getElementById('blue-name').textContent   = cfg.blueTeam   || data.blueTeam   || '—';
+    document.getElementById('orange-name').textContent = cfg.orangeTeam || data.orangeTeam || '—';
+
+    const bl = cfg.blueLogo   || data.blueLogo;
+    const ol = cfg.orangeLogo || data.orangeLogo;
+    const bImg = document.getElementById('blue-logo');
+    const oImg = document.getElementById('orange-logo');
+    if (bl) { bImg.src = bl; bImg.style.display = 'block'; } else { bImg.style.display = 'none'; }
+    if (ol) { oImg.src = ol; oImg.style.display = 'block'; } else { oImg.style.display = 'none'; }
+
+    // Score
+    document.getElementById('score-blue').textContent   = data.scoreBlue;
+    document.getElementById('score-orange').textContent = data.scoreOrange;
+
+    // Game info
+    const gameNum = (data.seriesBlue + data.seriesOrange);
+    document.getElementById('game-num').textContent    = `GAME ${gameNum}`;
+    document.getElementById('game-format').textContent = cfg.format || data.format || 'BO5';
+
+    // Series bar
+    const sb = data.seriesBlue, so = data.seriesOrange;
+    const leaderName  = sb >= so ? (cfg.blueTeam || data.blueTeam) : (cfg.orangeTeam || data.orangeTeam);
+    const leaderScore = sb >= so ? `${sb}-${so}` : `${so}-${sb}`;
+    document.getElementById('series-bar').textContent =
+      (sb === so && sb === 0) ? '—' : `${leaderName.toUpperCase()} LEADS ${leaderScore}`;
+
+    // Players
+    const blue   = data.players.filter(p => p.teamNum === 0).slice(0, 3);
+    const orange = data.players.filter(p => p.teamNum === 1).slice(0, 3);
+    while (blue.length < 3)   blue.push(null);
+    while (orange.length < 3) orange.push(null);
+
+    const blueMVP   = blue.reduce((m, p) => (p && (!m || p.score > m.score)) ? p : m, null);
+    const orangeMVP = orange.reduce((m, p) => (p && (!m || p.score > m.score)) ? p : m, null);
+
+    const STATS = [
+      { key: 'score',   label: 'SCORE' },
+      { key: 'goals',   label: 'GOALS' },
+      { key: 'assists', label: 'ASSISTS' },
+      { key: 'shots',   label: 'SHOTS' },
+      { key: 'saves',   label: 'SAVES' },
+      { key: 'demos',   label: 'DEMOS' },
+    ];
+
+    const table = document.getElementById('stat-table');
+    table.innerHTML = '';
+
+    // Header row: 3 blue names | empty center | 3 orange names
+    blue.forEach(p => {
+      const d = document.createElement('div');
+      d.className = 'ph blue';
+      d.textContent = p ? p.name.toUpperCase() : '';
+      table.appendChild(d);
+    });
+    const ch = document.createElement('div');
+    ch.className = 'ph center';
+    table.appendChild(ch);
+    orange.forEach(p => {
+      const d = document.createElement('div');
+      d.className = 'ph orange';
+      d.textContent = p ? p.name.toUpperCase() : '';
+      table.appendChild(d);
+    });
+
+    // Stat rows
+    STATS.forEach(({ key, label }) => {
+      const blueTotal   = blue.reduce((s, p) => s + (p?.[key] ?? 0), 0);
+      const orangeTotal = orange.reduce((s, p) => s + (p?.[key] ?? 0), 0);
+      const total = blueTotal + orangeTotal || 1;
+      const bluePct   = Math.round((blueTotal / total) * 100);
+      const orangePct = 100 - bluePct;
+
+      blue.forEach(p => {
+        const d = document.createElement('div');
+        const isMVP = p && p === blueMVP;
+        d.className = 'sv' + (isMVP ? ' mvp-blue' : '');
+        d.textContent = p ? (p[key] ?? 0) : '';
+        table.appendChild(d);
+      });
+
+      const center = document.createElement('div');
+      center.className = 'sc';
+      center.innerHTML = `
+        <div class="sc-label">${label}</div>
+        <div class="bar-track">
+          <div class="bar-blue"   style="width:${bluePct}%"></div>
+          <div class="bar-orange" style="width:${orangePct}%"></div>
+        </div>`;
+      table.appendChild(center);
+
+      orange.forEach(p => {
+        const d = document.createElement('div');
+        const isMVP = p && p === orangeMVP;
+        d.className = 'sv' + (isMVP ? ' mvp-orange' : '');
+        d.textContent = p ? (p[key] ?? 0) : '';
+        table.appendChild(d);
+      });
+    });
+  }
+</script>
+</body>
+</html>

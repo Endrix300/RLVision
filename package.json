@@ -2,7 +2,7 @@
   "name": "rlvision",
   "version": "2.0.0",
   "description": "RLVision - Rocket League Stats Overlay",
-  "main": "main.js",
+  "main": "src/main.js",
   "scripts": {
     "start": "electron .",
     "build": "electron-builder --win"
@@ -22,7 +22,11 @@
     },
     "files": [
       "**/*",
-      "!node_modules/**"
+      "!node_modules/.cache/**"
     ]
+  },
+  "dependencies": {
+    "adm-zip": "^0.5.17",
+    "ws": "^8.20.0"
   }
 }

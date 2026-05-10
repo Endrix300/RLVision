@@ -4,451 +4,1254 @@
   <meta charset="UTF-8">
   <title>RLVision</title>
   <style>
+    :root {
+      --bg:      #0d1117;
+      --surface: #161b22;
+      --card:    #1c2333;
+      --border:  #30363d;
+      --blue:    #2f81f7;
+      --blue-lt: #58a6ff;
+      --cyan:    #39d0d8;
+      --green:   #3fb950;
+      --red:     #f85149;
+      --amber:   #d29922;
+      --text:    #f0f6fc;
+      --text2:   #8b949e;
+      --text3:   #484f58;
+    }
+
     * { margin: 0; padding: 0; box-sizing: border-box; }
 
     body {
-      font-family: 'Segoe UI', sans-serif;
-      background: #0f0f1a;
-      color: #fff;
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
       height: 100vh;
       overflow: hidden;
       user-select: none;
-    }
-
-    /* ── Header ───────────────────────────────────────────────────────────── */
-
-    .header {
-      background: linear-gradient(135deg, #1a1a2e, #16213e);
-      padding: 24px 28px 20px;
-      border-bottom: 1px solid rgba(255,255,255,0.06);
-      display: flex;
-      align-items: center;
-      gap: 14px;
-    }
-
-    .logo {
-      width: 40px;
-      height: 40px;
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 20px;
-    }
-
-    .header-text h1 {
-      font-size: 20px;
-      font-weight: 700;
-      background: linear-gradient(135deg, #667eea, #a78bfa);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-
-    .header-text p {
-      font-size: 12px;
-      color: #666;
-      margin-top: 2px;
-    }
-
-    /* RL connection status indicator (top-right of header) */
-    .rl-status {
-      margin-left: auto;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 12px;
-      color: #666;
-    }
-
-    .status-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: #ef4444; /* Red = disconnected */
-      animation: pulse 2s infinite;
-    }
-
-    .status-dot.on { background: #10b981; } /* Green = connected */
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; }
-      50%       { opacity: 0.4; }
-    }
-
-    /* ── Scrollable content area ──────────────────────────────────────────── */
-
-    .content {
-      padding: 20px 28px;
       display: flex;
       flex-direction: column;
-      gap: 16px;
-      height: calc(100vh - 90px);
-      overflow-y: auto;
     }
 
-    /* ── Stats row (Wins / Losses / Ratio) ────────────────────────────────── */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 4px; }
 
-    .stats-row {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
+    /* ════════════════════════════ HEADER ════════════════════════════════════ */
+    .header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 18px;
+      height: 56px;
+      display: flex;
+      align-items: center;
       gap: 12px;
+      flex-shrink: 0;
     }
 
-    .stat-card {
-      background: rgba(255,255,255,0.04);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 12px;
-      padding: 16px 12px;
-      text-align: center;
-    }
-
-    .stat-card .value {
-      font-size: 28px;
-      font-weight: 800;
-      margin-bottom: 4px;
-    }
-
-    .stat-card .label {
-      font-size: 11px;
-      color: #666;
-      text-transform: uppercase;
-      letter-spacing: 0.8px;
-    }
-
-    .value.mmr  { color: #a78bfa; }
-    .value.win  { color: #10b981; }
-    .value.loss { color: #ef4444; }
-
-    /* ── Primary MMR card ─────────────────────────────────────────────────── */
-
-    .mmr-card {
-      background: rgba(103, 126, 234, 0.08);
-      border: 1px solid rgba(103, 126, 234, 0.2);
-      border-radius: 14px;
-      padding: 20px;
-    }
-
-    .mmr-big {
-      font-size: 52px;
-      font-weight: 900;
-      text-align: center;
-      background: linear-gradient(135deg, #667eea, #a78bfa);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      line-height: 1;
-      margin-bottom: 4px;
-    }
-
-    .mmr-label {
-      text-align: center;
-      font-size: 12px;
-      color: #666;
-      letter-spacing: 1px;
-      text-transform: uppercase;
-    }
-
-    /* ── Streak badge ─────────────────────────────────────────────────────── */
-
-    .streak-badge {
+    .logo-box {
+      width: 34px;
+      height: 34px;
+      background: transparent;
+      border-radius: 8px;
       display: flex;
       align-items: center;
       justify-content: center;
-      margin-top: 12px;
+      font-size: 16px;
+      font-weight: 900;
+      color: #fff;
+      letter-spacing: -1px;
+      flex-shrink: 0;
     }
 
-    .streak-pill {
-      padding: 5px 16px;
-      border-radius: 20px;
-      font-size: 13px;
+    .brand { flex: 1; }
+
+    .brand-name {
+      font-size: 16px;
       font-weight: 700;
+      color: var(--text);
+      letter-spacing: -0.3px;
+    }
+
+    .brand-name span { color: var(--cyan); }
+
+    .brand-tag {
+      font-size: 10px;
+      color: var(--text3);
+      margin-top: 1px;
       letter-spacing: 0.5px;
     }
 
-    .streak-pill.win-streak {
-      background: rgba(16, 185, 129, 0.15);
-      color: #10b981;
-      border: 1px solid rgba(16, 185, 129, 0.3);
+    .status-pill {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid var(--border);
+      border-radius: 99px;
+      padding: 5px 12px;
     }
 
-    .streak-pill.loss-streak {
-      background: rgba(239, 68, 68, 0.15);
-      color: #ef4444;
-      border: 1px solid rgba(239, 68, 68, 0.3);
+    .status-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: var(--red);
+      flex-shrink: 0;
     }
 
-    .streak-pill.neutral {
-      background: rgba(255,255,255,0.05);
-      color: #666;
-      border: 1px solid rgba(255,255,255,0.1);
+    .status-dot.on {
+      background: var(--green);
+      box-shadow: 0 0 8px var(--green);
     }
 
-    /* ── Generic section card ─────────────────────────────────────────────── */
+    .status-dot:not(.on) { animation: blink 2s infinite; }
 
+    @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+    .status-label { font-size: 11px; font-weight: 600; color: var(--text2); }
+
+    /* ════════════════════════════ TABS ══════════════════════════════════════ */
+    .tabs {
+      display: flex;
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 6px;
+      flex-shrink: 0;
+    }
+
+    .tab-btn {
+      padding: 11px 18px;
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--text2);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      font-family: inherit;
+      transition: color 0.15s, border-color 0.15s;
+      white-space: nowrap;
+    }
+
+    .tab-btn:hover { color: var(--text); }
+
+    .tab-btn.active {
+      color: var(--blue-lt);
+      border-bottom-color: var(--blue);
+    }
+
+    /* ════════════════════════════ PANELS ════════════════════════════════════ */
+    .tab-panel {
+      display: none;
+      flex-direction: column;
+      flex: 1;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .tab-panel.active { display: flex; }
+
+    /* User & Production scrollent au niveau panel */
+    #tab-user, #tab-production { overflow-y: auto !important; padding: 16px; gap: 12px; }
+
+    /* Empêche les sections de se comprimer — force l'overflow + scroll */
+    #tab-user > *, #tab-production > * { flex-shrink: 0; }
+
+    /* Preset & Workshop délèguent le scroll à leurs enfants */
+    #tab-cardesign, #tab-workshop { padding: 0; gap: 0; }
+
+    /* ════════════════════════════ MMR CARD ══════════════════════════════════ */
+    .mmr-card {
+      background: linear-gradient(135deg, #1a2744 0%, #0d1a30 100%);
+      border: 1px solid rgba(47,129,247,0.3);
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      gap: 18px;
+    }
+
+    .mmr-rank-img {
+      height: 68px;
+      width: auto;
+      max-width: 68px;
+      object-fit: contain;
+      filter: drop-shadow(0 4px 12px rgba(0,0,0,0.5));
+      flex-shrink: 0;
+    }
+
+    .mmr-main { flex: 1; }
+
+    .mmr-value {
+      font-size: 58px;
+      font-weight: 900;
+      line-height: 1;
+      color: #fff;
+      letter-spacing: -3px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .mmr-sub {
+      font-size: 11px;
+      color: rgba(255,255,255,0.4);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-top: 3px;
+    }
+
+    .mmr-side {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 10px;
+    }
+
+    .delta {
+      font-size: 15px;
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .delta.pos { color: var(--green); }
+    .delta.neg { color: var(--red); }
+    .delta.neu { color: var(--text3); }
+
+    .streak-badge, .streak-pill {
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 99px;
+    }
+
+    .streak-badge.win-streak,  .streak-pill.win-streak  { background: rgba(63,185,80,0.12); color: var(--green); border: 1px solid rgba(63,185,80,0.3); }
+    .streak-badge.loss-streak, .streak-pill.loss-streak { background: rgba(248,81,73,0.12);  color: var(--red);   border: 1px solid rgba(248,81,73,0.3); }
+    .streak-badge.neutral,     .streak-pill.neutral     { background: rgba(255,255,255,0.04); color: var(--text3); border: 1px solid var(--border); }
+
+    /* ════════════════════════════ STATS ROW ═════════════════════════════════ */
+    .stats-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+    }
+
+    .stat-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px;
+      text-align: center;
+    }
+
+    .stat-num {
+      font-size: 30px;
+      font-weight: 800;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .stat-num.g { color: var(--green); }
+    .stat-num.r { color: var(--red); }
+    .stat-num.b { color: var(--blue-lt); }
+
+    .stat-lbl {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text3);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-top: 5px;
+    }
+
+    /* ════════════════════════════ SECTION ═══════════════════════════════════ */
     .section {
-      background: rgba(255,255,255,0.03);
-      border: 1px solid rgba(255,255,255,0.07);
-      border-radius: 14px;
-      padding: 18px;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    .section-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 13px 16px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(255,255,255,0.02);
+    }
+
+    .section-head-icon {
+      width: 24px;
+      height: 24px;
+      background: rgba(47,129,247,0.15);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      flex-shrink: 0;
     }
 
     .section-title {
       font-size: 12px;
-      color: #666;
-      text-transform: uppercase;
-      letter-spacing: 1px;
-      margin-bottom: 14px;
+      font-weight: 700;
+      color: var(--text);
     }
 
-    /* ── Form elements ────────────────────────────────────────────────────── */
+    .section-body { padding: 14px 16px; }
 
-    .mmr-input-row {
-      display: flex;
-      gap: 10px;
-    }
-
+    /* ════════════════════════════ INPUTS ════════════════════════════════════ */
+    input[type="text"],
     input[type="number"] {
-      flex: 1;
-      background: rgba(255,255,255,0.06);
-      border: 1px solid rgba(255,255,255,0.12);
-      border-radius: 8px;
-      color: #fff;
-      font-size: 15px;
-      padding: 10px 14px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 13px;
+      padding: 8px 12px;
       outline: none;
-      transition: border-color 0.2s;
+      width: 100%;
+      font-family: inherit;
+      transition: border-color 0.15s, box-shadow 0.15s;
     }
 
-    input[type="number"]:focus { border-color: #667eea; }
+    input:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(47,129,247,0.15);
+    }
 
-    /* ── Buttons ──────────────────────────────────────────────────────────── */
+    input::placeholder { color: var(--text3); }
 
-    .btn {
-      padding: 10px 18px;
-      border: none;
-      border-radius: 8px;
+    select {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
       font-size: 13px;
+      padding: 8px 32px 8px 12px;
+      outline: none;
+      width: 100%;
+      cursor: pointer;
+      font-family: inherit;
+      appearance: none;
+      transition: border-color 0.15s;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23484f58'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+    }
+
+    select:focus { border-color: var(--blue); }
+    select option { background: #161b22; }
+
+    .field-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text2);
+      margin-bottom: 6px;
+      display: block;
+    }
+
+    .field { display: flex; flex-direction: column; gap: 0; }
+
+    /* ════════════════════════════ BUTTONS ═══════════════════════════════════ */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
       font-weight: 600;
       cursor: pointer;
-      transition: all 0.2s;
+      transition: all 0.15s;
       white-space: nowrap;
+      font-family: inherit;
     }
 
     .btn-primary {
-      background: linear-gradient(135deg, #667eea, #764ba2);
-      color: white;
+      background: var(--blue);
+      color: #fff;
     }
 
-    .btn-primary:hover { opacity: 0.85; transform: translateY(-1px); }
+    .btn-primary:hover { background: var(--blue-lt); }
 
     .btn-danger {
-      background: rgba(239, 68, 68, 0.12);
-      color: #ef4444;
-      border: 1px solid rgba(239, 68, 68, 0.25);
+      background: rgba(248,81,73,0.1);
+      color: var(--red);
+      border: 1px solid rgba(248,81,73,0.25);
     }
 
-    .btn-danger:hover { background: rgba(239, 68, 68, 0.22); }
+    .btn-danger:hover { background: rgba(248,81,73,0.18); }
 
     .btn-ghost {
-      background: rgba(255,255,255,0.05);
-      color: #aaa;
-      border: 1px solid rgba(255,255,255,0.1);
+      background: rgba(255,255,255,0.06);
+      color: var(--text2);
+      border: 1px solid var(--border);
     }
 
-    .btn-ghost:hover { background: rgba(255,255,255,0.09); }
+    .btn-ghost:hover { background: rgba(255,255,255,0.10); color: var(--text); }
 
-    .btn-row {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
+    .btn-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 
-    /* ── Overlay size inputs ──────────────────────────────────────────────── */
-
-    .size-row {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 10px;
-    }
-
-    .input-group label {
-      font-size: 11px;
-      color: #666;
-      display: block;
-      margin-bottom: 6px;
-    }
-
-    /* ── Footer ───────────────────────────────────────────────────────────── */
-
-    .footer-note {
-      font-size: 11px;
-      color: #444;
+    /* key display */
+    .key-display {
+      flex: 1;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 8px 12px;
+      font-size: 14px;
+      font-weight: 800;
+      color: var(--blue-lt);
       text-align: center;
-      padding-top: 4px;
+    }
+
+    /* ════════════════════════════ GRID HELPERS ══════════════════════════════ */
+    .g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    /* ════════════════════════════ HINT / FOOT ═══════════════════════════════ */
+    .hint { font-size: 11px; color: var(--text2); }
+    .hint-sm { font-size: 10px; color: var(--text3); }
+
+    .footer {
+      font-size: 10px;
+      color: var(--text3);
+      text-align: center;
+      padding: 6px 0;
+    }
+
+    a { color: var(--blue-lt); font-size: 11px; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* ════════════════════════════ PRODUCTION ════════════════════════════════ */
+    .team-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+    .team-card {
+      border-radius: 10px;
+      padding: 14px;
+      border: 1px solid;
+    }
+
+    .team-card.blue-t   { background: rgba(47,129,247,0.07); border-color: rgba(47,129,247,0.25); }
+    .team-card.orange-t { background: rgba(210,153,34,0.07); border-color: rgba(210,153,34,0.25); }
+
+    .team-card-head {
+      font-size: 11px;
+      font-weight: 700;
+      margin-bottom: 10px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid;
+    }
+
+    .team-card.blue-t   .team-card-head { color: #60a5fa; border-color: rgba(47,129,247,0.2); }
+    .team-card.orange-t .team-card-head { color: #fbbf24; border-color: rgba(210,153,34,0.2); }
+
+    .fg { display: flex; flex-direction: column; gap: 5px; margin-bottom: 8px; }
+    .fg:last-child { margin-bottom: 0; }
+
+    .obs-box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-left: 3px solid var(--blue);
+      border-radius: 6px;
+      padding: 10px 13px;
+      font-family: 'Consolas', monospace;
+      font-size: 12px;
+      color: var(--blue-lt);
+      user-select: all;
+      margin-top: 8px;
+    }
+
+    .srv-row { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+
+    .prod-log { font-size: 11px; color: var(--green); min-height: 16px; margin-top: 6px; }
+
+    .score-row { display: flex; align-items: flex-end; gap: 8px; }
+
+    .score-in {
+      width: 64px !important;
+      text-align: center !important;
+      font-size: 26px !important;
+      font-weight: 900 !important;
+      padding: 8px 4px !important;
+      font-variant-numeric: tabular-nums !important;
+    }
+
+    .score-sep { font-size: 20px; color: var(--text3); padding-bottom: 9px; }
+
+    /* ════════════════════════════ SUB-NAV ═══════════════════════════════════ */
+    .sub-nav {
+      display: flex;
+      gap: 4px;
+      flex-wrap: wrap;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    .sub-btn {
+      background: none;
+      border: 1px solid var(--border);
+      color: var(--text2);
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 5px 12px;
+      border-radius: 6px;
+      transition: all 0.15s;
+      font-family: inherit;
+    }
+
+    .sub-btn:hover { color: var(--text); background: rgba(255,255,255,0.05); }
+
+    .sub-btn.active,
+    .cd-btn.active,
+    .ws-btn.active {
+      background: rgba(47,129,247,0.15);
+      color: var(--blue-lt);
+      border-color: rgba(47,129,247,0.35);
+    }
+
+    .cd-panel { display: none; flex-direction: column; flex: 1; min-height: 0; overflow: hidden; padding: 16px; gap: 12px; }
+    .cd-panel.active { display: flex; }
+
+    /* restore bar */
+    .restore-bar {
+      background: rgba(210,153,34,0.07);
+      border: 1px solid rgba(210,153,34,0.2);
+      border-radius: 8px;
+      padding: 10px 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: wrap;
+      flex-shrink: 0;
+      margin: 10px 16px 8px;
+    }
+
+    .restore-warn { font-size: 11px; color: var(--amber); margin-left: auto; }
+
+    .progress-track {
+      height: 3px;
+      background: rgba(255,255,255,0.06);
+      border-radius: 99px;
+      overflow: hidden;
+      display: none;
+      margin-top: 8px;
+    }
+
+    .progress-fill {
+      height: 100%;
+      width: 0%;
+      background: var(--blue);
+      transition: width 0.15s;
+    }
+
+    /* remote items */
+    .r-controls {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-bottom: 10px;
+    }
+
+    .r-controls input,
+    .r-controls select { flex: 1; min-width: 90px; }
+
+    .r-list {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      overflow-y: auto;
+      flex: 1;
+      min-height: 0;
+    }
+
+    /* classes générées par main-renderer.js */
+    .remote-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      transition: border-color 0.15s;
+      flex-shrink: 0;
+    }
+
+    .remote-item:hover { border-color: rgba(47,129,247,0.35); }
+
+    .remote-item-main {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .remote-item-title {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .remote-item-sub {
+      font-size: 10px;
+      color: var(--text2);
+      margin-top: 2px;
+    }
+
+    .remote-disabled { opacity: 0.35; pointer-events: none; }
+
+    /* ════════════════════════════ WORKSHOP ══════════════════════════════════ */
+    .ws-search-row { display: flex; gap: 8px; }
+
+    .map-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 6px;
+    }
+
+    .map-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      overflow: hidden;
+      cursor: default;
+      transition: border-color 0.15s;
+    }
+
+    .map-card:hover { border-color: rgba(47,129,247,0.4); }
+
+    .map-card img {
+      width: 100%;
+      aspect-ratio: 16/9;
+      object-fit: cover;
+      display: block;
+    }
+
+    .map-card-placeholder {
+      width: 100%;
+      aspect-ratio: 16/9;
+      background: var(--card);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--text3);
+      font-size: 20px;
+    }
+
+    .map-card-name {
+      font-size: 10px;
+      font-weight: 600;
+      color: var(--text2);
+      padding: 5px 7px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .ws-empty { text-align: center; color: var(--text3); font-size: 12px; padding: 36px; }
+
+    .rec-badge {
+      font-size: 10px;
+      color: var(--green);
+      border: 1px solid rgba(63,185,80,0.3);
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-weight: 700;
+    }
+
+    .ws-panel { display: none; flex: 1; flex-direction: column; gap: 10px; }
+    .ws-panel.active { display: flex; }
+
+    /* My Maps & Search panels */
+    #ws-play, #ws-search {
+      padding: 16px;
+      gap: 12px;
+      overflow-y: auto;
+      min-height: 0;
+    }
+
+    /* Bouton Play dans les cartes My Maps */
+    #play-grid .btn.btn-primary {
+      border-top: 1px solid rgba(47,129,247,0.25) !important;
+      border-radius: 0 0 8px 8px !important;
+    }
+
+    /* ════════════════════════════ MODAL ═════════════════════════════════════ */
+    #rl-map-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      backdrop-filter: blur(4px);
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-box {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-top: 2px solid var(--blue);
+      border-radius: 12px;
+      width: 92%;
+      max-height: 78vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.7);
+    }
+
+    .modal-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 13px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .modal-head h3 { font-size: 13px; font-weight: 700; color: var(--text); }
+
+    .modal-close {
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border);
+      color: var(--text2);
+      font-size: 14px;
+      cursor: pointer;
+      padding: 4px 10px;
+      border-radius: 6px;
+      transition: all 0.15s;
+      font-family: inherit;
+    }
+
+    .modal-close:hover { color: var(--text); }
+
+    #rl-confirm {
+      display: none;
+      background: rgba(47,129,247,0.07);
+      border-bottom: 1px solid rgba(47,129,247,0.2);
+      padding: 12px 16px;
+    }
+
+    #rl-confirm p { font-size: 12px; color: var(--text2); margin-bottom: 10px; line-height: 1.6; }
+
+    #rl-map-search {
+      background: var(--card);
+      border: none;
+      border-bottom: 1px solid var(--border);
+      color: var(--text);
+      font-size: 13px;
+      padding: 10px 16px;
+      outline: none;
+      font-family: inherit;
+      width: 100%;
+      transition: border-color 0.15s;
+    }
+
+    #rl-map-search:focus { border-bottom-color: var(--blue); }
+
+    #rl-map-list {
+      overflow-y: auto;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .rl-map-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 16px;
+      cursor: pointer;
+      font-size: 12px;
+      color: var(--text2);
+      border-bottom: 1px solid var(--border);
+      transition: background 0.1s, color 0.1s;
+    }
+
+    .rl-map-item:hover { background: rgba(47,129,247,0.07); color: var(--text); }
+
+    /* ════════════════════════════ RESTART WARNING ═══════════════════════════ */
+    #restartWarning {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: var(--surface);
+      border: 1px solid rgba(248,81,73,0.4);
+      border-top: 2px solid var(--red);
+      border-radius: 12px;
+      padding: 24px;
+      text-align: center;
+      z-index: 999;
+      min-width: 240px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.8);
     }
   </style>
 </head>
 <body>
 
-<!-- ── Header ────────────────────────────────────────────────────────────────
-     Shows the app logo, title, and a live dot indicating SOS plugin connection. -->
+<!-- ════════════════════════════ HEADER ══════════════════════════════════════ -->
 <div class="header">
-  <div class="logo">🎮</div>
-  <div class="header-text">
-    <h1>RLVision</h1>
-    <p>Rocket League Stats Tracker</p>
+  <div class="logo-box"><img src="assets/logo.png" style="width:100%; height:100%; object-fit:contain; border-radius:6px;" /></div>
+  <div class="brand">
+    <div class="brand-name">RL<span>Vision</span></div>
+    <div class="brand-tag">Rocket League Overlay Tool</div>
   </div>
-  <!-- Green dot = connected to the SOS plugin, red = offline -->
-  <div class="rl-status">
+  <div class="status-pill">
     <div class="status-dot" id="rlDot"></div>
-    <span id="rlStatus">Offline</span>
+    <span class="status-label" id="rlStatus">Offline</span>
   </div>
 </div>
 
-<div class="content">
+<!-- ════════════════════════════ TABS ════════════════════════════════════════ -->
+<div class="tabs">
+  <button class="tab-btn active" id="tab-user-btn"       onclick="switchTab('user')">User</button>
+  <button class="tab-btn"        id="tab-cardesign-btn"  onclick="switchTab('cardesign')">Preset</button>
+  <button class="tab-btn"        id="tab-production-btn" onclick="switchTab('production')">Production</button>
+  <button class="tab-btn"        id="tab-workshop-btn"   onclick="switchTab('workshop')">Workshop</button>
+</div>
 
-  <!-- ── MMR Card ────────────────────────────────────────────────────────────
-       Large MMR number, current streak badge, and session MMR delta. -->
+<!-- ════════════════════════════ PANEL: USER ═════════════════════════════════ -->
+<div class="tab-panel active" id="tab-user">
+
+  <!-- MMR Card -->
   <div class="mmr-card">
-    <div class="mmr-big" id="mmrBig">0</div>
-    <div class="mmr-label">MMR</div>
-    <div class="streak-badge">
-      <div class="streak-pill neutral" id="streakPill">No streak</div>
+    <img id="mmrRankImg" class="mmr-rank-img" alt="" />
+    <div class="mmr-main">
+      <div class="mmr-value" id="mmrBig">0</div>
+      <div class="mmr-sub">MMR Points</div>
     </div>
-    <!-- Session delta: net MMR gained/lost since last stats reset -->
-    <div style="text-align: center; margin-top: 10px; font-size: 13px; font-weight: 700;"
-         id="mmrGainedEl">
-      Δ 0 this session
+    <div class="mmr-side">
+      <div class="delta neu" id="mmrGainedEl">Δ 0</div>
+      <div class="streak-badge neutral" id="streakPill">No streak</div>
     </div>
   </div>
 
-  <!-- ── Session Stats Row ──────────────────────────────────────────────────
-       Wins, losses, and win ratio for the current session. -->
+  <!-- Stats -->
   <div class="stats-row">
-    <div class="stat-card">
-      <div class="value win" id="winsVal">0</div>
-      <div class="label">Wins</div>
+    <div class="stat-box">
+      <div class="stat-num g" id="winsVal">0</div>
+      <div class="stat-lbl">Wins</div>
     </div>
-    <div class="stat-card">
-      <div class="value loss" id="lossesVal">0</div>
-      <div class="label">Losses</div>
+    <div class="stat-box">
+      <div class="stat-num r" id="lossesVal">0</div>
+      <div class="stat-lbl">Losses</div>
     </div>
-    <div class="stat-card">
-      <div class="value mmr" id="ratioVal">—</div>
-      <div class="label">Ratio</div>
+    <div class="stat-box">
+      <div class="stat-num b" id="ratioVal">—</div>
+      <div class="stat-lbl">Ratio</div>
     </div>
   </div>
 
-  <!-- ── Player Overlays Toggle ─────────────────────────────────────────────
-       Enables/disables the per-player MMR overlay windows shown during matches. -->
+  <!-- Player Overlays -->
   <div class="section">
-    <div class="section-title">👥 Player Overlays</div>
-    <div class="btn-row">
-      <button class="btn btn-ghost" id="togglePlayerOverlaysBtn"
-              onclick="togglePlayerOverlays()">Enable</button>
-      <span style="font-size: 12px; color: #666; align-self: center;"
-            id="playerOverlaysStatus">Disabled</span>
+    <div class="section-head">
+      <div class="section-head-icon">👥</div>
+      <div class="section-title">Player Overlays</div>
     </div>
-    <div style="margin-top: 10px;">
-      <a href="https://github.com/Endrix300/RLVision/blob/main/MMROverlay.md"
-        target="_blank"
-        style="font-size: 11px; color: #667eea; text-decoration: none;">
-        📖 How to setup overlays
-      </a>
-    </div>
-  </div>
-
-  <!-- ── Scoreboard Key Binding ─────────────────────────────────────────────
-       Captures a keyboard key or gamepad button to use as the scoreboard toggle.
-       Hold the bound key to show player MMR overlays; release to hide them. -->
-  <div class="section">
-    <div class="section-title">🎮 Scoreboard Key</div>
-    <div style="font-size: 12px; color: #666; margin-bottom: 10px;">
-      Press your scoreboard key to register it
-    </div>
-    <div style="display: flex; gap: 10px; align-items: center;">
-      <!-- Displays the currently bound key label -->
-      <div id="scoreboardKeyDisplay" style="
-        flex: 1;
-        background: rgba(255,255,255,0.06);
-        border: 1px solid rgba(255,255,255,0.12);
-        border-radius: 8px;
-        padding: 10px 14px;
-        font-size: 14px;
-        font-weight: 700;
-        color: #a78bfa;
-        text-align: center;
-      ">Not configured</div>
-      <button class="btn btn-primary" id="bindBtn" onclick="startBinding()">Bind</button>
-      <button class="btn btn-danger"              onclick="clearBinding()">Clear</button>
-    </div>
-    <div style="font-size: 11px; color: #555; margin-top: 8px;" id="bindStatus"></div>
-  </div>
-
-  <!-- ── Alpha Boost Toggle ──────────────────────────────────────────────────── -->
-  <div class="section">
-    <div class="section-title">🚀 Alpha Boost Sound</div>
-    <div class="btn-row">
-      <button class="btn btn-ghost" id="toggleBoostBtn" onclick="toggleBoost()">Enable</button>
-      <span style="font-size: 12px; color: #666; align-self: center;" id="boostStatus">Disabled</span>
-    </div>
-    <div style="font-size: 11px; color: #555; margin-top: 8px;" id="boostStatusMsg"></div>
-  </div>
-
-  <!-- ── Restart Warning Popup ──────────────────────────────────────────────── -->
-  <div id="restartWarning" style="
-    display: none;
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background: #1a1a2e;
-    border: 1px solid rgba(255,255,255,0.12);
-    border-radius: 12px;
-    padding: 20px 24px;
-    text-align: center;
-    z-index: 999;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.6);
-    min-width: 220px;
-  ">
-    <div style="font-size: 22px; margin-bottom: 8px;">⚠️</div>
-    <div style="font-size: 13px; font-weight: 700; color: #fff; margin-bottom: 4px;">Restart required</div>
-    <div style="font-size: 11px; color: #666;">Please restart Rocket League<br>for changes to take effect.</div>
-    <button class="btn btn-ghost" style="margin-top: 14px; width: 100%;" onclick="document.getElementById('restartWarning').style.display='none'">OK</button>
-  </div>
-
-  <!-- ── Overlay Size Controls ──────────────────────────────────────────────
-       Resize the transparent MMR overlay window rendered in-game. -->
-  <div class="section">
-    <div class="section-title">📐 Overlay Size</div>
-    <div class="size-row">
-      <div class="input-group">
-        <label>Width (px)</label>
-        <input type="number" id="widthInput"  placeholder="220" min="150" max="400" value="220" />
+    <div class="section-body">
+      <div class="btn-row" style="margin-bottom:10px;">
+        <button class="btn btn-ghost" id="togglePlayerOverlaysBtn" onclick="togglePlayerOverlays()">Enable</button>
+        <span class="hint" id="playerOverlaysStatus">Disabled</span>
       </div>
-      <div class="input-group">
-        <label>Height (px)</label>
-        <input type="number" id="heightInput" placeholder="160" min="100" max="400" value="160" />
-      </div>
+      <a href="https://github.com/Endrix300/RLVision/blob/main/MMROverlay.md" target="_blank">→ Setup guide</a>
     </div>
-    <div style="margin-top: 10px;">
+  </div>
+
+  <!-- Scoreboard Key -->
+  <div class="section">
+    <div class="section-head">
+      <div class="section-head-icon">⌨</div>
+      <div class="section-title">Scoreboard Key</div>
+    </div>
+    <div class="section-body">
+      <div class="hint" style="margin-bottom:10px;">Press your scoreboard key to register it</div>
+      <div class="btn-row">
+        <div class="key-display" id="scoreboardKeyDisplay">Not configured</div>
+        <button class="btn btn-primary" id="bindBtn" onclick="startBinding()">Bind</button>
+        <button class="btn btn-danger" onclick="clearBinding()">Clear</button>
+      </div>
+      <div class="hint-sm" id="bindStatus" style="margin-top:8px;"></div>
+    </div>
+  </div>
+
+  <!-- Overlay Size -->
+  <div class="section">
+    <div class="section-head">
+      <div class="section-head-icon">⊞</div>
+      <div class="section-title">Overlay Size</div>
+    </div>
+    <div class="section-body">
+      <div class="g2" style="margin-bottom:10px;">
+        <div class="field">
+          <label class="field-label">Width (px)</label>
+          <input type="number" id="widthInput" placeholder="220" min="150" max="400" value="220" />
+        </div>
+        <div class="field">
+          <label class="field-label">Height (px)</label>
+          <input type="number" id="heightInput" placeholder="160" min="100" max="400" value="160" />
+        </div>
+      </div>
       <button class="btn btn-ghost" onclick="applySize()">Apply size</button>
     </div>
   </div>
 
-  <!-- ── Reset Controls ─────────────────────────────────────────────────────
-       Clear session W/L/streak counters or manually trigger an MMR refresh. -->
+  <!-- Reset -->
   <div class="section">
-    <div class="section-title">🔄 Reset</div>
-    <div class="btn-row">
-      <button class="btn btn-danger" onclick="resetStats()">Reset stats (W/L/streak)</button>
-      <button class="btn btn-ghost"  onclick="refreshMMR()">🔄 Refresh MMR</button>
+    <div class="section-head">
+      <div class="section-head-icon">↺</div>
+      <div class="section-title">Session Reset</div>
+    </div>
+    <div class="section-body">
+      <div class="btn-row">
+        <button class="btn btn-danger" onclick="resetStats()">Reset W / L / Streak</button>
+        <button class="btn btn-ghost"  onclick="refreshMMR()">↺ Refresh MMR</button>
+      </div>
     </div>
   </div>
 
-  <div class="footer-note">Ctrl+Shift+H to show/hide overlay</div>
-  <div class="footer-note" style="margin-top: 4px;">Created by Endrix30</div>
+  <div class="footer">Ctrl+Shift+H — toggle overlay &nbsp;·&nbsp; by Endrix30</div>
 
+  <!-- Restart Warning (fixed overlay) -->
+  <div id="restartWarning">
+    <div style="font-size:26px; margin-bottom:10px;">🔄</div>
+    <div style="font-size:12px; font-weight:700; color:var(--red); margin-bottom:8px; letter-spacing:1px; text-transform:uppercase;">Restart Required</div>
+    <div style="font-size:12px; color:var(--text2); line-height:1.7;">
+      Rocket League must be closed<br>and reopened for the skin<br>swap to take effect.
+    </div>
+    <button class="btn btn-danger" style="margin-top:16px; width:100%;"
+            onclick="document.getElementById('restartWarning').style.display='none'">Got it</button>
+  </div>
+
+</div>
+
+<!-- ════════════════════════════ PANEL: PRODUCTION ═══════════════════════════ -->
+<div class="tab-panel" id="tab-production">
+
+  <!-- Event Info -->
+  <div class="section">
+    <div class="section-head">
+      <div class="section-head-icon">📡</div>
+      <div class="section-title">Event Info</div>
+    </div>
+    <div class="section-body" style="display:flex; flex-direction:column; gap:10px;">
+      <div class="g2">
+        <div class="fg">
+          <label class="field-label">Event name</label>
+          <input type="text" id="prodEventName" placeholder="Paris Open #6" oninput="prodAutoSave()" />
+        </div>
+        <div class="fg">
+          <label class="field-label">Round</label>
+          <input type="text" id="prodRound" placeholder="Quarterfinal" oninput="prodAutoSave()" />
+        </div>
+      </div>
+      <div class="fg">
+        <label class="field-label">Format</label>
+        <select id="prodFormat" onchange="prodAutoSave()">
+          <option value="BO2">Best of 2</option>
+          <option value="BO3">Best of 3</option>
+          <option value="BO5" selected>Best of 5</option>
+          <option value="BO7">Best of 7</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Teams -->
+  <div class="team-grid">
+    <div class="team-card blue-t">
+      <div class="team-card-head">🔵 Blue Team</div>
+      <div class="fg">
+        <label class="field-label">Team name</label>
+        <input type="text" id="prodBlueTeam" placeholder="KDC" oninput="prodAutoSave()" />
+      </div>
+      <div class="fg">
+        <label class="field-label">Logo URL</label>
+        <input type="text" id="prodBlueLogo" placeholder="https://..." oninput="prodAutoSave()" />
+      </div>
+    </div>
+    <div class="team-card orange-t">
+      <div class="team-card-head">🟠 Orange Team</div>
+      <div class="fg">
+        <label class="field-label">Team name</label>
+        <input type="text" id="prodOrangeTeam" placeholder="VIT" oninput="prodAutoSave()" />
+      </div>
+      <div class="fg">
+        <label class="field-label">Logo URL</label>
+        <input type="text" id="prodOrangeLogo" placeholder="https://..." oninput="prodAutoSave()" />
+      </div>
+    </div>
+  </div>
+
+  <!-- Actions -->
+  <div class="section">
+    <div class="section-head">
+      <div class="section-head-icon">⚡</div>
+      <div class="section-title">Series Score & Actions</div>
+    </div>
+    <div class="section-body" style="display:flex; flex-direction:column; gap:12px;">
+      <div class="score-row">
+        <div>
+          <label class="field-label" style="text-align:center;">Blue wins</label>
+          <input type="number" id="manualSeriesBlue" class="score-in" value="0" min="0" max="7" />
+        </div>
+        <div class="score-sep">—</div>
+        <div>
+          <label class="field-label" style="text-align:center;">Orange wins</label>
+          <input type="number" id="manualSeriesOrange" class="score-in" value="0" min="0" max="7" />
+        </div>
+        <button class="btn btn-ghost" onclick="applyManualSeries()" style="align-self:flex-end;">Set</button>
+      </div>
+      <div style="display:flex; flex-direction:column; gap:6px;">
+        <button id="toggle-prod-overlay" class="btn btn-ghost" style="width:100%;">▶ Show overlay</button>
+        <button id="toggle-recap-overlay" class="btn btn-ghost" style="width:100%;">◉ Auto recap : OFF</button>
+      </div>
+      <div class="prod-log" id="prodStatus"></div>
+    </div>
+  </div>
+
+  <!-- OBS -->
+  <div class="section">
+    <div class="section-head">
+      <div class="section-head-icon">🌐</div>
+      <div class="section-title">OBS Browser Source</div>
+    </div>
+    <div class="section-body">
+      <div class="hint">Add this URL as a Browser Source in OBS</div>
+      <div class="obs-box">http://localhost:3000/overlay</div>
+      <div class="srv-row">
+        <div class="status-dot" id="serverDot" style="animation:none; background:var(--red);"></div>
+        <span class="hint" id="serverStatus">Server offline</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer">Production mode · Ctrl+Shift+R — toggle recap</div>
+
+</div>
+
+<!-- ════════════════════════════ PANEL: PRESET ═══════════════════════════════ -->
+<div class="tab-panel" id="tab-cardesign">
+
+  <div class="sub-nav">
+    <button class="sub-btn cd-btn active" id="cd-profile-btn"   onclick="switchCarDesignTab('profile')">Profile</button>
+    <button class="sub-btn cd-btn" id="cd-boost-btn"     onclick="switchCarDesignTab('boost')">Boost</button>
+    <button class="sub-btn cd-btn" id="cd-decal-btn"     onclick="switchCarDesignTab('decal')">Decal</button>
+    <button class="sub-btn cd-btn" id="cd-body-btn"      onclick="switchCarDesignTab('body')">Body</button>
+    <button class="sub-btn cd-btn" id="cd-wheel-btn"     onclick="switchCarDesignTab('wheel')">Wheel</button>
+    <button class="sub-btn cd-btn" id="cd-paint-btn"     onclick="switchCarDesignTab('paint')">Paint</button>
+    <button class="sub-btn cd-btn" id="cd-explosion-btn" onclick="switchCarDesignTab('explosion')">Explosion</button>
+    <button class="sub-btn cd-btn" id="cd-banner-btn"    onclick="switchCarDesignTab('banner')">Banner</button>
+  </div>
+
+  <div class="restore-bar">
+    <button class="btn btn-danger" id="restoreAllOriginalBtn" onclick="restoreAllOriginalFiles()">↺ Restore all files</button>
+    <span class="hint" id="restoreAllOriginalStatus">Ready</span>
+    <span class="restore-warn">⚠ Restart RL if not applied in-game</span>
+    <div class="progress-track" id="restoreAllProgressTrack" style="width:100%; margin-top:0; margin-left:0;">
+      <div class="progress-fill" id="restoreAllProgressFill"></div>
+    </div>
+  </div>
+
+  <!-- Profile -->
+  <div class="cd-panel active" id="cd-profile">
+    <div class="section">
+      <div class="section-head">
+        <div class="section-head-icon">◉</div>
+        <div class="section-title">Profile Management</div>
+      </div>
+      <div class="section-body">
+        <div class="btn-row" style="margin-bottom:12px;">
+          <input type="text" id="newProfileName" placeholder="New profile name..." style="flex:1;" />
+          <button class="btn btn-primary" onclick="createProfile()">Create</button>
+        </div>
+        <div class="r-list" id="profileList"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Boost -->
+  <div class="cd-panel" id="cd-boost">
+    <div class="section" style="flex-shrink:0;">
+      <div class="section-head">
+        <div class="section-head-icon">🔊</div>
+        <div class="section-title">Alpha Boost Sound</div>
+      </div>
+      <div class="section-body">
+        <div class="btn-row">
+          <button class="btn btn-ghost" id="toggleBoostBtn" onclick="toggleBoost()">Enable</button>
+          <span class="hint" id="boostStatus">Disabled</span>
+        </div>
+        <div class="hint-sm" id="boostStatusMsg" style="margin-top:4px;"></div>
+      </div>
+    </div>
+    <div class="section" style="flex:1; min-height:0; display:flex; flex-direction:column;">
+      <div class="section-head">
+        <div class="section-head-icon">🌐</div>
+        <div class="section-title">Boosts Catalog</div>
+      </div>
+      <div class="section-body" style="flex:1; min-height:0; overflow:hidden; display:flex; flex-direction:column; gap:8px;">
+        <div class="r-controls" style="flex-shrink:0;">
+          <input type="text" id="boostCatalogSearch" placeholder="Search boost..." oninput="renderRemoteCategory('boosts')" />
+          <button class="btn btn-ghost" onclick="refreshRemoteCatalogs()">↺ Refresh</button>
+          <select id="boostProfileSelect" onchange="addToProfile('boosts', this.value); this.value='';">
+            <option value="">+ Add to Profile</option>
+          </select>
+        </div>
+        <div class="r-list" id="boostCatalogList"></div>
+        <div class="hint-sm" id="boostCatalogStatus" style="flex-shrink:0;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Decal -->
+  <div class="cd-panel" id="cd-decal">
+    <div class="section" style="flex:1; min-height:0; display:flex; flex-direction:column;">
+      <div class="section-head">
+        <div class="section-head-icon">🌐</div>
+        <div class="section-title">Skins Catalog</div>
+      </div>
+      <div class="section-body" style="flex:1; min-height:0; overflow:hidden; display:flex; flex-direction:column; gap:8px;">
+        <div class="r-controls" style="flex-shrink:0;">
+          <input type="text" id="skinCarSearch" list="skinCarSuggestions" placeholder="Search car..." oninput="renderRemoteCategory('skins')" />
+          <datalist id="skinCarSuggestions"></datalist>
+          <input type="text" id="skinCatalogSearch" placeholder="Search decal..." oninput="renderRemoteCategory('skins')" />
+          <button class="btn btn-ghost" onclick="refreshRemoteCatalogs()">↺ Refresh</button>
+          <select id="skinProfileSelect" onchange="addToProfile('skins', this.value); this.value='';">
+            <option value="">+ Add to Profile</option>
+          </select>
+        </div>
+        <div class="r-list" id="skinCatalogList"></div>
+        <div class="hint-sm" id="skinCatalogStatus" style="flex-shrink:0;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Body -->
+  <div class="cd-panel" id="cd-body">
+    <div class="section">
+      <div style="text-align:center; padding:48px 20px; color:var(--text3);">
+        <div style="font-size:28px; margin-bottom:10px; opacity:0.4;">▣</div>
+        <div style="font-size:12px; font-weight:600;">Body — Coming soon</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Wheel -->
+  <div class="cd-panel" id="cd-wheel">
+    <div class="section" style="flex:1; min-height:0; display:flex; flex-direction:column;">
+      <div class="section-head">
+        <div class="section-head-icon">🌐</div>
+        <div class="section-title">Wheels Catalog</div>
+      </div>
+      <div class="section-body" style="flex:1; min-height:0; overflow:hidden; display:flex; flex-direction:column; gap:8px;">
+        <div class="r-controls" style="flex-shrink:0;">
+          <input type="text" id="wheelCatalogSearch" placeholder="Search wheel..." oninput="renderRemoteCategory('wheels')" />
+          <button class="btn btn-ghost" onclick="refreshRemoteCatalogs()">↺ Refresh</button>
+          <select id="wheelProfileSelect" onchange="addToProfile('wheels', this.value); this.value='';">
+            <option value="">+ Add to Profile</option>
+          </select>
+        </div>
+        <div class="r-list" id="wheelCatalogList"></div>
+        <div class="hint-sm" id="wheelCatalogStatus" style="flex-shrink:0;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Paint -->
+  <div class="cd-panel" id="cd-paint">
+    <div class="section">
+      <div style="text-align:center; padding:48px 20px; color:var(--text3);">
+        <div style="font-size:12px; font-weight:600;">Paint — Coming soon</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Explosion -->
+  <div class="cd-panel" id="cd-explosion">
+    <div class="section">
+      <div style="text-align:center; padding:48px 20px; color:var(--text3);">
+        <div style="font-size:12px; font-weight:600;">Goal Explosion — Coming soon</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Banner -->
+  <div class="cd-panel" id="cd-banner">
+    <div class="section">
+      <div style="text-align:center; padding:48px 20px; color:var(--text3);">
+        <div style="font-size:12px; font-weight:600;">Banner — Coming soon</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ════════════════════════════ PANEL: WORKSHOP ═════════════════════════════ -->
+<div class="tab-panel" id="tab-workshop">
+
+  <div class="sub-nav">
+    <button class="sub-btn ws-btn active" id="ws-search-btn" onclick="switchWorkshopTab('search')">Search</button>
+    <button class="sub-btn ws-btn" id="ws-play-btn"   onclick="switchWorkshopTab('play')">My Maps</button>
+  </div>
+
+  <!-- Search -->
+  <div class="ws-panel active" id="ws-search">
+    <div class="ws-search-row">
+      <input type="text" id="workshopSearch" placeholder="Search maps on bakkesplugins..."
+             onkeydown="if(event.key==='Enter') workshopSearch()" style="flex:1;" />
+      <button class="btn btn-primary" onclick="workshopSearch()">Search</button>
+    </div>
+    <div id="workshop-status" class="ws-empty">Loading...</div>
+    <div class="map-grid" id="workshop-grid"></div>
+    <div style="display:flex; justify-content:center; gap:6px; padding-top:4px;" id="workshop-pagination"></div>
+    <div class="hint-sm" style="text-align:center;" id="workshop-count"></div>
+  </div>
+
+  <!-- My Maps -->
+  <div class="ws-panel" id="ws-play">
+    <div style="display:flex; justify-content:space-between; gap:8px; align-items:center; flex-wrap:wrap; padding-bottom:12px; border-bottom:1px solid var(--border);">
+      <div class="btn-row">
+        <button class="btn btn-ghost" id="playFilterAllBtn"   onclick="setWorkshopPlayFilter('all')">All</button>
+        <button class="btn btn-ghost" id="playFilterAddedBtn" onclick="setWorkshopPlayFilter('added')">Already Added</button>
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-danger" id="restoreAllWorkshopBtn" onclick="restoreAllWorkshopMaps()">↺ Restore all</button>
+        <button class="btn btn-ghost" onclick="loadInstalledMaps()">↺ Refresh</button>
+      </div>
+    </div>
+    <div class="hint-sm" id="playActionsStatus"></div>
+    <div id="play-status" class="ws-empty">Loading...</div>
+    <div class="map-grid" id="play-grid"></div>
+  </div>
+
+</div>
+
+<!-- ════════════════════════════ MODAL ═══════════════════════════════════════ -->
+<div id="rl-map-modal">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3 id="rl-modal-title">Choose RL Map to Replace</h3>
+      <button class="modal-close" onclick="closeMapModal()">✕</button>
+    </div>
+    <div id="rl-confirm">
+      <p id="rl-confirm-msg"></p>
+      <div style="display:flex; gap:6px;">
+        <button id="rl-confirm-yes" class="btn btn-primary" style="font-size:11px;">✓ Confirm</button>
+        <button class="btn btn-ghost" style="font-size:11px;" onclick="document.getElementById('rl-confirm').style.display='none'">← Back</button>
+      </div>
+    </div>
+    <input id="rl-map-search" type="text" placeholder="Filter RL maps..." oninput="filterRLMaps(this.value)" />
+    <div id="rl-map-list"></div>
+  </div>
 </div>
 
 <script src="main-renderer.js"></script>

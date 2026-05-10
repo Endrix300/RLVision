@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RLVision Responsive Overlay</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --blue-team: #1e64d2;
+    --orange-team: #dc6414;
+    --bg-dark: rgba(10, 10, 15, 0.95);
+  }
+
+  body {
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden; /* ← remet hidden */
+    background: transparent;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    position: relative;
+  }
+
+  /* ── SCOREBOARD RLCS ─────────────────────────────────────────────── */
+
+  #scoreboard {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    filter: drop-shadow(0 0.5vh 1.5vh rgba(0,0,0,0.5));
+    width: 35%; 
+    min-width: 450px;
+  }
+
+  #event-bar {
+    background: var(--bg-dark);
+    color: #aaa;
+    font-size: 0.65vw;
+    font-weight: 700;
+    padding: 0.4vh 1.5vw;
+    text-transform: uppercase;
+    letter-spacing: 0.1vw;
+    border-radius: 0 0 4px 4px;
+    z-index: 2;
+  }
+
+  #score-row {
+    display: flex;
+    height: 6.5vh;
+    background: #0a0a0a;
+    align-items: stretch;
+    width: 100%;
+    margin-top: -1px;
+  }
+
+  .team-section {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    flex: 1;
+    padding: 0.3vh 0.5vw;
+    gap: 0.2vh;
+  }
+
+  .team-name {
+    font-size: 0.7vw;
+    font-weight: 900;
+    color: rgba(255,255,255,0.75);
+    text-transform: uppercase;
+    letter-spacing: 0.05vw;
+  }
+
+  .score-box {
+    width: 4.5vw;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.5vw;
+    font-weight: 900;
+    color: white;
+  }
+  .blue-score-bg { background: var(--blue-team); }
+  .orange-score-bg { background: var(--orange-team); }
+
+  #timer-container {
+    background: white;
+    width: 8vw;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #111;
+  }
+
+  #timer { font-size: 2vw; font-weight: 900; }
+
+  /* SECTION SERIES (BO) */
+  #series-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-top: 0.4vh;
+    width: 100%;
+  }
+
+  #series-row-top {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5vw;
+    background: rgba(0,0,0,0.7);
+    padding: 0.5vh 1.5vw;
+    border-radius: 0 0 8px 8px;
+    min-height: 2.2vh;
+  }
+
+  .series-dots { display: flex; gap: 0.3vw; align-items: center; }
+  
+  .series-dot {
+    width: 1.2vw; height: 0.6vh;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 1px;
+  }
+  .series-dot.filled.blue { background: var(--blue-team); border: none; }
+  .series-dot.filled.orange { background: var(--orange-team); border: none; }
+  #series-center-slot .series-dot.filled.blue   { background: var(--blue-team)   !important; border: none !important; }
+  #series-center-slot .series-dot.filled.orange { background: var(--orange-team) !important; border: none !important; }
+
+  /* On cible uniquement le carré qui est à l'intérieur du slot central */
+  #series-center-slot .series-dot {
+      width: 2.5vw;   /* Plus large */
+      height: 1vh;  /* Plus haut */
+      border-radius: 2px;
+      background: rgba(255,255,255,0.2); /* Un peu plus visible par défaut */
+  }
+
+  /* LE CARRÉ QUI REMPLACE LE 0-0 */
+  #series-center-slot {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 2.5vw;
+  }
+
+  /* ── PLAYER CARDS ────────────────── */
+
+  #team-left { position: absolute; top: 1vh; left: 0; width: 16vw; }
+  #team-right { position: absolute; top: 1vh; right: 0; width: 16vw; }
+
+  .player-row {
+    display: flex;
+    align-items: center;
+    background: rgba(10,10,15,0.85);
+    height: 3.6vh;
+    position: relative;
+    margin-bottom: 0.8vh;
+    transition: all 0.2s ease;
+  }
+
+  .player-row.left { flex-direction: row; border-right: 0.25vw solid var(--blue-team); }
+  .player-row.right { flex-direction: row-reverse; border-left: 0.25vw solid var(--orange-team); }
+
+  .player-name {
+    font-size: 0.75vw;
+    font-weight: 700;
+    color: #fff;
+    text-transform: uppercase;
+    flex: 1;
+    padding: 0 0.8vw;
+  }
+
+  .player-boost-val {
+    font-size: 0.9vw;
+    font-weight: 900;
+    color: #fff;
+    min-width: 2.5vw;
+    text-align: center;
+    z-index: 2;
+  }
+
+  .boost-wrap {
+    position: absolute;
+    bottom: 0.4vh;  /* ← était 0, maintenant surélevé */
+    height: 0.5vh;
+    background: rgba(255,255,255,0.15);
+  }
+
+  .player-row.left .boost-wrap { left: 0; right: 2.5vw; }
+  .player-row.left .boost-fill { left: 0; background: var(--blue-team); }
+
+  .player-row.right .boost-wrap { right: 0; left: 2.5vw; }
+  .player-row.right .boost-fill { right: 0; background: var(--orange-team); }
+
+  .boost-fill { 
+    position: absolute;
+    top: 0;
+    height: 100%; 
+    transition: width 0.12s linear; 
+  }
+
+  .player-row.active-blue { background: var(--blue-team) !important; }
+  .player-row.active-orange { background: var(--orange-team) !important; }
+  .player-row.active-blue .boost-fill, .player-row.active-orange .boost-fill { background: white !important; }
+
+  /* ── FOCUS BAR ── */
+  #focus-bar {
+    position: absolute;
+    bottom: 0vh;
+    left: 0vw;
+    background: var(--bg-dark);
+    display: none; 
+    align-items: stretch;
+    border-radius: 0.5vw;
+    overflow: hidden;
+    width: 28vw;    /* était 38vw */
+    height: 6.5vh;  /* était 8.5vh */
+    box-shadow: 0 1.5vh 4vh rgba(0,0,0,0.8);
+  }
+
+  #focus-main-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    padding: 0 1.5vw;
+    min-width: 14vw;
+  }
+
+  #focus-name-block { font-size: 1.2vw; font-weight: 900; color: white; text-transform: uppercase; }
+  .f-boost-container { width: 100%; height: 0.8vh; background: rgba(0, 0, 0, 0.3); margin-top: 0.4vh; }
+  .f-boost-fill { height: 100%; background: white; transition: width 0.1s linear; }
+  .focus-stats-grid { display: flex; align-items: center; flex: 1; }
+  .focus-stat { flex: 1; display: flex; flex-direction: column; align-items: center; border-right: 1px solid rgba(255,255,255,0.1); }
+  .focus-stat:last-child { border-right: none; }
+  .focus-stat-val { font-size: 1vw; font-weight: 900; color: #fff; }
+  .focus-stat-label { font-size: 0.5vw; font-weight: 700; color: #888; text-transform: uppercase; }
+  #focus-main-info  { min-width: 10vw;  } 
+
+  #boost-circle {
+    position: fixed;  /* ← fixed au lieu de absolute */
+    bottom: 0vh;
+    right: 1vw;
+    display: none;
+  }
+  #scoreboard,
+  #team-left,
+  #team-right {
+    transition: opacity 0.3s ease;
+  }
+
+</style>
+</head>
+<body>
+
+<div id="scoreboard">
+  <div id="event-bar">RLVISION | TOURNAMENT</div>
+  <div id="score-row">
+    <div class="score-box blue-score-bg" id="score-blue">0</div>
+    <div class="team-section">
+      <img id="logo-blue" src="" alt="" style="height:3.5vh; display:none; object-fit:contain;">
+      <div class="team-name" id="name-blue">BLUE</div>
+    </div>
+    <div id="timer-container"><div id="timer">5:00</div></div>
+    <div class="team-section" style="justify-content: center;">
+      <img id="logo-orange" src="" alt="" style="height:3.5vh; display:none; object-fit:contain;">
+      <div class="team-name" id="name-orange">ORANGE</div>
+    </div>
+    <div class="score-box orange-score-bg" id="score-orange">0</div>
+  </div>
+  
+  <div id="series-container">
+    <div id="series-row-top">
+      <div class="series-dots" id="dots-blue"></div>
+      <div id="series-center-slot"></div>
+      <div class="series-dots" id="dots-orange"></div>
+    </div>
+  </div>
+</div>
+
+<div id="team-left">
+  <div class="player-row left" id="left-0"><div class="player-name">—</div><div class="player-boost-val">0</div><div class="boost-wrap"><div class="boost-fill"></div></div></div>
+  <div class="player-row left" id="left-1"><div class="player-name">—</div><div class="player-boost-val">0</div><div class="boost-wrap"><div class="boost-fill"></div></div></div>
+  <div class="player-row left" id="left-2"><div class="player-name">—</div><div class="player-boost-val">0</div><div class="boost-wrap"><div class="boost-fill"></div></div></div>
+</div>
+
+<div id="team-right">
+  <div class="player-row right" id="right-0"><div class="player-name">—</div><div class="player-boost-val">0</div><div class="boost-wrap"><div class="boost-fill"></div></div></div>
+  <div class="player-row right" id="right-1"><div class="player-name">—</div><div class="player-boost-val">0</div><div class="boost-wrap"><div class="boost-fill"></div></div></div>
+  <div class="player-row right" id="right-2"><div class="player-name">—</div><div class="player-boost-val">0</div><div class="boost-wrap"><div class="boost-fill"></div></div></div>
+</div>
+
+<div id="focus-bar">
+  <div id="focus-main-info">
+    <div id="focus-name-block">—</div>
+    <div class="f-boost-container"><div id="f-boost-bar" class="f-boost-fill"></div></div>
+  </div>
+  <div class="focus-stats-grid">
+    <div class="focus-stat"><div class="focus-stat-val" id="f-score">0</div><div class="focus-stat-label">Score</div></div>
+    <div class="focus-stat"><div class="focus-stat-val" id="f-goals">0</div><div class="focus-stat-label">Goals</div></div>
+    <div class="focus-stat"><div class="focus-stat-val" id="f-shots">0</div><div class="focus-stat-label">Shots</div></div>
+    <div class="focus-stat"><div class="focus-stat-val" id="f-assists">0</div><div class="focus-stat-label">Assists</div></div>
+    <div class="focus-stat"><div class="focus-stat-val" id="f-saves">0</div><div class="focus-stat-label">Saves</div></div>
+  </div>
+</div>
+
+
+<div id="boost-circle">
+  <svg viewBox="0 0 120 120" width="13vw" height="13vw" style="overflow: visible;">
+    <!-- Fond du cercle -->
+    <circle cx="60" cy="60" r="50" fill="rgba(0,0,0,0.75)" stroke="rgba(255,255,255,0.08)" stroke-width="6"/>
+    <!-- Arc de fond -->
+    <circle id="boost-track" cx="60" cy="60" r="44"
+      fill="none" stroke="rgba(255,255,255,0.08)" stroke-width="8"
+      stroke-dasharray="220 360" stroke-dashoffset="-70"
+      stroke-linecap="round"/>
+    <!-- Arc de progression -->
+    <circle id="boost-arc" cx="60" cy="60" r="44"
+      fill="none" stroke="#00cfff" stroke-width="8"
+      stroke-dasharray="0 360" stroke-dashoffset="-70"
+      stroke-linecap="round"/>
+    <!-- Valeur -->
+    <text id="boost-text" x="60" y="67" text-anchor="middle"
+      font-size="28" font-weight="900" fill="#00cfff"
+      font-family="Segoe UI, Arial, sans-serif">0</text>
+  </svg>
+</div>
+
+<script>
+  const WS_URL = 'ws://127.0.0.1:3000';
+  let ws = new WebSocket(WS_URL);
+
+  ws.onmessage = (e) => {
+    const msg = JSON.parse(e.data);
+
+    if (msg.type === 'live') applyLive(msg.liveData);
+
+    if (msg.type === 'config' || msg.type === 'init') {
+      applyConfig(msg.prodConfig);
+    }
+
+    // 🔴 HIDE overlay complet (quand RL pas focus)
+    if (msg.type === 'hide-overlay') {
+      document.getElementById('scoreboard').style.display = 'none';
+      document.getElementById('team-left').style.display = 'none';
+      document.getElementById('team-right').style.display = 'none';
+      document.getElementById('focus-bar').style.display = 'none';
+      document.getElementById('boost-circle').style.display = 'none';
+    }
+
+    // 🟢 SHOW overlay (quand RL revient)
+    if (msg.type === 'show-overlay') {
+      document.getElementById('scoreboard').style.display = 'flex';
+      document.getElementById('team-left').style.display = 'block';
+      document.getElementById('team-right').style.display = 'block';
+    }
+
+    // 🎯 Focus uniquement
+    if (msg.type === 'hide-focus') {
+      document.getElementById('focus-bar').style.display = 'none';
+      document.getElementById('boost-circle').style.display = 'none';
+    }
+  };
+
+  let currentFormat = 'BO5'; // ← variable globale
+  let currentSeriesBlue   = 0;
+  let currentSeriesOrange = 0;
+
+  function applyConfig(c) {
+    if (!c) return;
+    currentFormat = c.format || 'BO5';
+    console.log('📋 Format reçu:', currentFormat); // ✅ log
+    document.getElementById('name-blue').textContent   = c.blueTeam   || "BLUE";
+    document.getElementById('name-orange').textContent = c.orangeTeam || "ORANGE";
+    document.getElementById('event-bar').textContent   = `${c.eventName || 'RLVISION'} | ${c.round || ''} | ${c.format || 'BO5'}`;
+
+    const logoBlue   = document.getElementById('logo-blue');
+    const logoOrange = document.getElementById('logo-orange');
+    if (c.blueLogo) { logoBlue.src = c.blueLogo; logoBlue.style.display = 'block'; }
+    else              { logoBlue.style.display = 'none'; }
+    if (c.orangeLogo) { logoOrange.src = c.orangeLogo; logoOrange.style.display = 'block'; }
+    else               { logoOrange.style.display = 'none'; }
+
+    // ✅ Utilise les wins stockés depuis liveData
+    updateSeriesLayout(currentFormat, currentSeriesBlue, currentSeriesOrange);
+  }
+
+  function applyLive(d) {
+    document.getElementById('score-blue').textContent   = d.scoreBlue ?? 0;
+    document.getElementById('score-orange').textContent = d.scoreOrange ?? 0;
+    document.getElementById('timer').textContent        = d.time || "5:00";
+    document.getElementById('scoreboard').style.display = 'flex';
+    document.getElementById('team-left').style.display = 'block';
+    document.getElementById('team-right').style.display = 'block';
+
+    // ✅ Sauvegarde les wins
+    currentSeriesBlue   = d.seriesBlue   ?? 0;
+    currentSeriesOrange = d.seriesOrange ?? 0;
+
+    updateSeriesLayout(currentFormat, currentSeriesBlue, currentSeriesOrange);
+
+    const players = d.players || [];
+    renderTeam(players.filter(p => p.teamNum === 0), 'left',  d.focusedPlayer);
+    renderTeam(players.filter(p => p.teamNum === 1), 'right', d.focusedPlayer);
+    renderFocus(players.find(p => p.name.toLowerCase() === d.focusedPlayer?.toLowerCase()));
+  }
+
+  function updateSeriesLayout(format, blueWins, orangeWins) {
+    console.log('🎯 updateSeries — format:', format, 'blue:', blueWins, 'orange:', orangeWins); // ✅ lo
+    const blueSide   = document.getElementById('dots-blue');
+    const orangeSide = document.getElementById('dots-orange');
+    const centerSlot = document.getElementById('series-center-slot');
+    
+    blueSide.innerHTML   = ''; 
+    orangeSide.innerHTML = ''; 
+    centerSlot.innerHTML = '';
+    
+    let sideCount = 0;
+    if      (format === 'BO2') sideCount = 1;
+    else if (format === 'BO3') sideCount = 1;
+    else if (format === 'BO5') sideCount = 2;
+    else if (format === 'BO7') sideCount = 3;
+
+    const winTarget = format === 'BO2' ? 2 : sideCount + 1;
+    console.log('🎯 sideCount:', sideCount, 'winTarget:', winTarget); // ✅ log
+
+    // Points bleu — gauche à droite ✅
+    for (let i = 0; i < sideCount; i++) {
+        const d = document.createElement('div');
+        d.className = `series-dot ${i < blueWins ? 'filled blue' : ''}`;
+        blueSide.appendChild(d);
+    }
+
+    // Carré central ✅
+    if (sideCount > 0) {
+        const middleDot = document.createElement('div');
+        middleDot.className = 'series-dot';
+
+        if (format === 'BO2' && blueWins === 1 && orangeWins === 1) {
+            // ✅ Match nul 1-1 — dégradé moitié bleu moitié orange
+            middleDot.style.background = `linear-gradient(90deg, var(--blue-team) 50%, var(--orange-team) 50%)`;
+            middleDot.style.border = 'none';
+        } else if (blueWins >= winTarget) {
+            middleDot.classList.add('filled', 'blue');
+        } else if (orangeWins >= winTarget) {
+            middleDot.classList.add('filled', 'orange');
+        }
+
+        centerSlot.appendChild(middleDot);
+    }
+
+    // Points orange — droite à gauche ✅
+    for (let i = 0; i < sideCount; i++) {
+        const d = document.createElement('div');
+        const filled = (sideCount - 1 - i) < orangeWins;
+        d.className = `series-dot ${filled ? 'filled orange' : ''}`;
+        orangeSide.appendChild(d);
+    }
+  }
+
+  function applyLive(d) {
+    document.getElementById('score-blue').textContent   = d.scoreBlue ?? 0;
+    document.getElementById('score-orange').textContent = d.scoreOrange ?? 0;
+    document.getElementById('timer').textContent        = d.time || "5:00";
+
+    // ✅ Met à jour les dots de série depuis liveData
+    updateSeriesLayout(currentFormat, d.seriesBlue ?? 0, d.seriesOrange ?? 0); // ✅ utilise la variable
+
+    const players = d.players || [];
+    renderTeam(players.filter(p => p.teamNum === 0), 'left',  d.focusedPlayer);
+    renderTeam(players.filter(p => p.teamNum === 1), 'right', d.focusedPlayer);
+    renderFocus(players.find(p => p.name.toLowerCase() === d.focusedPlayer?.toLowerCase()));
+  }
+
+  function renderTeam(list, side, focusedName) {
+    list.sort((a,b) => b.score - a.score);
+    for(let i=0; i<3; i++) {
+      const row = document.getElementById(`${side}-${i}`);
+      const p = list[i];
+      if(!p) { row.style.opacity = "0"; continue; }
+      row.style.opacity = "1";
+      row.querySelector('.player-name').textContent = p.name;
+      row.querySelector('.player-boost-val').textContent = Math.round(p.boost);
+      row.querySelector('.boost-fill').style.width = p.boost + "%";
+      row.classList.remove('active-blue', 'active-orange');
+      if(p.name.toLowerCase() === focusedName?.toLowerCase()) {
+        row.classList.add(p.teamNum === 0 ? 'active-blue' : 'active-orange');
+      }
+    }
+  }
+
+  function renderFocus(p) {
+    const fb = document.getElementById('focus-bar');
+    const bc = document.getElementById('boost-circle');
+
+    if (!p) {
+      fb.style.display = "none";
+      bc.style.display = "none";
+      return;
+    }
+
+    fb.style.display = "flex";
+    bc.style.display = "block";
+
+    // Focus bar
+    document.getElementById('focus-name-block').textContent = p.name;
+    document.getElementById('focus-main-info').style.backgroundColor = p.teamNum === 1 ? 'var(--orange-team)' : 'var(--blue-team)';
+    document.getElementById('f-boost-bar').style.width = (p.boost || 0) + "%";
+    document.getElementById('f-score').textContent   = p.score   || 0;
+    document.getElementById('f-goals').textContent   = p.goals   || 0;
+    document.getElementById('f-shots').textContent   = p.shots   || 0;
+    document.getElementById('f-assists').textContent = p.assists || 0;
+    document.getElementById('f-saves').textContent   = p.saves   || 0;
+
+    // Boost circle
+    const boost     = p.boost || 0;
+    const color     = p.teamNum === 1 ? '#dc6414' : '#1e64d2';
+    const maxArc    = 220; // degrés d'arc total
+    const arcLength = (boost / 100) * maxArc;
+
+    document.getElementById('boost-arc').setAttribute('stroke', color);
+    document.getElementById('boost-arc').setAttribute('stroke-dasharray', `${arcLength} 360`);
+    document.getElementById('boost-text').setAttribute('fill', color);
+    document.getElementById('boost-text').textContent = Math.round(boost);
+  }
+</script>
+</body>
+</html>

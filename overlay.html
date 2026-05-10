@@ -4,94 +4,98 @@
   <meta charset="UTF-8">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-
-    html, body {
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-    }
-
+    html, body { width: 100%; height: 100%; overflow: hidden; }
     body {
-      font-family: 'Segoe UI', sans-serif;
+      font-family: 'Segoe UI', system-ui, sans-serif;
       background: transparent;
       color: #fff;
       display: flex;
     }
-    
 
-    /* Container-based scaling */
     .overlay {
       width: 100%;
       height: 100%;
       display: flex;
       flex-direction: row;
       align-items: center;
-      background: rgba(8, 8, 18, 0.75);
-      backdrop-filter: blur(8px);
-      border: 1px solid rgba(255,255,255,0.08);
+      background: rgba(13, 17, 23, 0.88);
+      border: 1px solid rgba(47,129,247,0.25);
+      border-top: 2px solid #2f81f7;
       border-radius: 10px;
-      padding: 10px;
+      padding: 10px 12px;
       gap: 12px;
       container-type: size;
       -webkit-app-region: drag;
+      overflow: hidden;
     }
 
-    /* ───────── LEFT ───────── */
+    /* ── LEFT ── */
     .ov-left {
-      flex: 1.2;
+      flex: 1.3;
       height: 100%;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      border-right: 1px solid rgba(255,255,255,0.07);
-      padding-right: 10px;
+      border-right: 1px solid rgba(255,255,255,0.08);
+      padding-right: 12px;
     }
 
-    .ov-title {
-      font-size: clamp(8px, 3cqh, 14px);
-      font-weight: 700;
-      background: linear-gradient(135deg, #667eea, #a78bfa);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+    .ov-brand {
+      font-size: clamp(7px, 2.5cqh, 11px);
+      font-weight: 800;
+      letter-spacing: 2px;
       text-transform: uppercase;
-      letter-spacing: 0.08em;
+      color: #58a6ff;
     }
 
     .ov-mmr-row {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: clamp(4px, 1.5cqw, 8px);
     }
 
-    /* Big MMR value */
+    .ov-mmr-rank-img {
+      height: clamp(28px, 14cqh, 64px);
+      width: auto;
+      max-width: clamp(28px, 14cqh, 64px);
+      object-fit: contain;
+      flex-shrink: 0;
+      filter: drop-shadow(0 2px 6px rgba(0,0,0,0.5));
+    }
+
     .ov-mmr-value {
-      font-size: clamp(28px, 14cqh, 80px);
+      font-size: clamp(26px, 13cqh, 72px);
       font-weight: 900;
       line-height: 1;
-      background: linear-gradient(135deg, #667eea, #a78bfa);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
+      color: #ffffff;
+      letter-spacing: -0.03em;
+      font-variant-numeric: tabular-nums;
     }
 
-    .ov-mmr-label {
-      font-size: clamp(8px, 3cqh, 14px);
-      color: #666;
+    .ov-mmr-tag {
+      font-size: clamp(7px, 2.5cqh, 11px);
+      color: rgba(255,255,255,0.35);
       text-transform: uppercase;
+      letter-spacing: 1.5px;
+      font-weight: 600;
     }
 
-    /* Gain / loss */
-    .ov-mmr-change {
-      font-size: clamp(10px, 4cqh, 18px);
+    .ov-change {
+      font-size: clamp(9px, 3.5cqh, 15px);
       font-weight: 800;
       opacity: 0;
       transition: opacity 0.3s;
+      font-variant-numeric: tabular-nums;
+      padding: 2px 6px;
+      border-radius: 4px;
+      width: fit-content;
     }
 
-    .ov-mmr-change.show { opacity: 1; }
-    .ov-mmr-change.up { color: #10b981; }
-    .ov-mmr-change.down { color: #ef4444; }
+    .ov-change.show { opacity: 1; }
+    .ov-change.up   { color: #3fb950; background: rgba(63,185,80,0.12); }
+    .ov-change.down { color: #f85149; background: rgba(248,81,73,0.12); }
 
-    /* ───────── RIGHT ───────── */
+    /* ── RIGHT ── */
     .ov-right {
       flex: 1;
       height: 100%;
@@ -100,104 +104,84 @@
       justify-content: space-between;
     }
 
-    /* Streak */
     .ov-streak {
-      font-size: clamp(10px, 6cqh, 26px);
-      font-weight: 700;
+      font-size: clamp(9px, 5cqh, 20px);
+      font-weight: 800;
+      letter-spacing: 0.02em;
     }
 
-    .ov-streak.win { color: #10b981; }
-    .ov-streak.loss { color: #ef4444; }
-    .ov-streak.neutral { color: #555; }
+    .ov-streak.win     { color: #3fb950; }
+    .ov-streak.loss    { color: #f85149; }
+    .ov-streak.neutral { color: rgba(255,255,255,0.2); }
 
-    /* W/L */
     .ov-wl {
       display: flex;
       align-items: center;
-      gap: 8px;
-    }
-
-    .ov-stat {
-      display: flex;
-      align-items: center;
+      gap: clamp(4px, 2cqw, 9px);
     }
 
     .ov-stat-value {
-      font-size: clamp(14px, 10cqh, 40px);
-      font-weight: 800;
-      display: flex;
-      align-items: center;
+      font-size: clamp(13px, 9cqh, 42px);
+      font-weight: 900;
       line-height: 1;
+      font-variant-numeric: tabular-nums;
     }
 
-    .ov-stat-value.w { color: #10b981; }
-    .ov-stat-value.l { color: #ef4444; }
+    .ov-stat-value.w { color: #3fb950; }
+    .ov-stat-value.l { color: #f85149; }
 
     .ov-stat-label {
-      font-size: clamp(8px, 5cqh, 16px);
-      color: #666;
+      font-size: clamp(7px, 4cqh, 14px);
+      color: rgba(255,255,255,0.3);
+      font-weight: 600;
     }
 
     .ov-sep {
-      font-size: clamp(10px, 6cqh, 22px);
-      color: #333;
+      font-size: clamp(9px, 5cqh, 20px);
+      color: rgba(255,255,255,0.15);
     }
 
-    /* Session MMR */
-    .ov-mmr-session {
-      font-size: clamp(10px, 6cqh, 20px);
-      font-weight: 700;
+    .ov-session, .ov-mmr-session {
+      font-size: clamp(11px, 7cqh, 24px);
+      font-weight: 800;
+      font-variant-numeric: tabular-nums;
     }
 
-    .ov-mmr-session.positive { color: #10b981; }
-    .ov-mmr-session.negative { color: #ef4444; }
-    .ov-mmr-session.neutral { color: #666; }
+    .ov-session.positive, .ov-mmr-session.positive { color: #3fb950; }
+    .ov-session.negative, .ov-mmr-session.negative { color: #f85149; }
+    .ov-session.neutral,  .ov-mmr-session.neutral  { color: #484f58; }
 
-    /* Animation */
     @keyframes mmrPop {
-      0% { transform: scale(1); }
-      40% { transform: scale(1.12); }
+      0%   { transform: scale(1); }
+      40%  { transform: scale(1.1); }
       100% { transform: scale(1); }
     }
 
-    .pop { animation: mmrPop 0.4s ease-out; }
+    .pop { animation: mmrPop 0.4s cubic-bezier(0.34,1.56,0.64,1); }
   </style>
 </head>
 <body>
 <div class="overlay">
-
-  <!-- Left panel: MMR value and animated change indicator -->
   <div class="ov-left">
-    <div class="ov-title">🎮 RLVision</div>
+    <div class="ov-brand">RLVision</div>
     <div class="ov-mmr-row">
-      <!-- Large MMR number updated after each match -->
       <div class="ov-mmr-value" id="ovMMR">0</div>
-      <div class="ov-mmr-label">MMR</div>
+      <img id="ovRankImg" class="ov-mmr-rank-img" alt="" />
+      <div class="ov-mmr-tag">MMR</div>
     </div>
-    <!-- Fades in briefly to show +/- MMR delta after a match -->
-    <div class="ov-mmr-change" id="mmrChange">+9</div>
+    <div class="ov-change" id="mmrChange">+9</div>
   </div>
-
-  <!-- Right panel: streak, W/L counters, and session MMR total -->
   <div class="ov-right">
-    <!-- Win/loss streak with color-coded text (green = win, red = loss) -->
     <div class="ov-streak neutral" id="ovStreak">— No streak</div>
-    <!-- Wins and losses side by side -->
     <div class="ov-wl">
-      <div class="ov-stat">
-        <div class="ov-stat-value w" id="ovWins">0</div>
-        <div class="ov-stat-label">✅ W</div>
-      </div>
+      <div class="ov-stat-value w" id="ovWins">0</div>
+      <div class="ov-stat-label">W</div>
       <div class="ov-sep">/</div>
-      <div class="ov-stat">
-        <div class="ov-stat-value l" id="ovLosses">0</div>
-        <div class="ov-stat-label">❌ L</div>
-      </div>
+      <div class="ov-stat-value l" id="ovLosses">0</div>
+      <div class="ov-stat-label">L</div>
     </div>
-    <!-- Session MMR delta -->
-    <div class="ov-mmr-session neutral" id="ovMMRSession">Δ 0</div>
+    <div class="ov-session neutral" id="ovMMRSession">Δ 0</div>
   </div>
-
 </div>
 <script src="overlay-renderer.js"></script>
 </body>

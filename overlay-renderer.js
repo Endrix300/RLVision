@@ -64,6 +64,25 @@ function updateOverlay(state) {
   // Update the main MMR number display
   mmrEl.textContent = state.mmr;
 
+  const rk = document.getElementById('ovRankImg');
+  if (rk) {
+    if (state.rankImageUrl) {
+      rk.onerror = () => { rk.style.display = 'none'; rk.removeAttribute('src'); };
+      rk.onload  = () => { rk.style.display = 'block'; };
+      if (rk.getAttribute('data-src-active') !== state.rankImageUrl) {
+        rk.setAttribute('data-src-active', state.rankImageUrl);
+        rk.style.display = 'block'; // ← force AVANT src (cache ou pas)
+        rk.src = state.rankImageUrl;
+      } else {
+        rk.style.display = 'block'; // ← déjà chargée, force l'affichage
+      }
+    } else {
+      rk.removeAttribute('data-src-active');
+      rk.removeAttribute('src');
+      rk.style.display = 'none';
+    }
+  }
+
   // Update wins and losses counters
   winsEl.textContent   = state.wins;
   lossesEl.textContent = state.losses;
