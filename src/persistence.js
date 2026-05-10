@@ -54,6 +54,10 @@ function loadPositionsFromDisk() {
         });
         console.log('✅ Boost state loaded — sound:', saved.boostEnabled);
       }
+      if (saved.customCookedPath) {
+        S.customCookedPath = saved.customCookedPath;
+        console.log('✅ Custom cooked path loaded:', saved.customCookedPath);
+      }
     }
   } catch (e) {
     console.log('⚠️ Could not load positions');

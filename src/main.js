@@ -284,9 +284,42 @@ const RL_COOKED_PATHS = [
 ];
 
 function findRLCookedDir() {
+  if (S.customCookedPath && fs.existsSync(S.customCookedPath)) return S.customCookedPath;
   if (S.rlInstallPath) return path.dirname(S.rlInstallPath);
   return RL_COOKED_PATHS.find(p => fs.existsSync(p)) || null;
 }
+
+ipcMain.handle('get-cooked-path', () => {
+  const autoDetected = (S.rlInstallPath ? path.dirname(S.rlInstallPath) : null)
+    ?? RL_COOKED_PATHS.find(p => fs.existsSync(p))
+    ?? null;
+  return {
+    autoDetected,
+    custom  : S.customCookedPath || null,
+    active  : findRLCookedDir(),
+  };
+});
+
+ipcMain.handle('set-cooked-path', (_, { cookedPath }) => {
+  const trimmed = (cookedPath || '').trim();
+  try {
+    let existing = {};
+    if (fs.existsSync(STATE_FILE)) existing = JSON.parse(fs.readFileSync(STATE_FILE, 'utf8'));
+    if (!trimmed) {
+      S.customCookedPath = null;
+      delete existing.customCookedPath;
+      fs.writeFileSync(STATE_FILE, JSON.stringify(existing), 'utf8');
+      return { success: true, cleared: true, active: findRLCookedDir() };
+    }
+    if (!fs.existsSync(trimmed)) return { success: false, error: 'Ce dossier n\'existe pas' };
+    S.customCookedPath = trimmed;
+    existing.customCookedPath = trimmed;
+    fs.writeFileSync(STATE_FILE, JSON.stringify(existing), 'utf8');
+    return { success: true, active: trimmed };
+  } catch (e) {
+    return { success: false, error: e.message };
+  }
+});
 
 ipcMain.on('toggle-boost', (event, enabled) => {
   try {
@@ -303,7 +336,7 @@ ipcMain.on('toggle-boost', (event, enabled) => {
       return;
     }
 
-    fs.copyFileSync(src, path.join(cookedDir, 'SFX_Boost_Standard.bnk'));
+    fs.writeFileSync(path.join(cookedDir, 'SFX_Boost_Standard.bnk'), fs.readFileSync(src));
 
     let existing = {};
     if (fs.existsSync(STATE_FILE)) existing = JSON.parse(fs.readFileSync(STATE_FILE, 'utf8'));
@@ -606,8 +639,7 @@ ipcMain.handle('fetch-bakkesmaps', async (_, { page = 1, query = '' } = {}) => {
 
 ipcMain.handle('install-bakkesmap', async (_, { id, name }) => {
   try {
-    const workshopDir = path.join(app.getAppPath(), 'FilesChanges', 'Workshop', 'Enable');
-    if (!fs.existsSync(workshopDir)) fs.mkdirSync(workshopDir, { recursive: true });
+    const workshopDir = getWorkshopEnableDir();
 
     // Fetch map detail page — the Nuxt SSR JSON embeds the CDN file URL directly
     const { body: detailBuf } = await httpsGet({
@@ -652,7 +684,28 @@ function isRecommended(fileName) {
   return RECOMMENDED_PATTERNS.some(p => f.includes(p));
 }
 
-const INSTALLS_FILE = () => path.join(app.getAppPath(), 'FilesChanges', 'Workshop', 'installs.json');
+function getWorkshopEnableDir() {
+  const dir = app.isPackaged
+    ? path.join(app.getPath('userData'), 'Workshop', 'Enable')
+    : path.join(app.getAppPath(), 'FilesChanges', 'Workshop', 'Enable');
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  return dir;
+}
+
+function getWorkshopDisableDir() {
+  const dir = path.join(app.getPath('userData'), 'Workshop', 'Disable');
+  if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+  return dir;
+}
+
+const INSTALLS_FILE = () => {
+  const base = app.isPackaged
+    ? app.getPath('userData')
+    : path.join(app.getAppPath(), 'FilesChanges', 'Workshop');
+  return app.isPackaged
+    ? path.join(base, 'Workshop', 'installs.json')
+    : path.join(base, 'installs.json');
+};
 
 function readInstalls() {
   try { return JSON.parse(fs.readFileSync(INSTALLS_FILE(), 'utf8')); } catch { return {}; }
@@ -687,19 +740,17 @@ ipcMain.handle('get-rl-maps', async () => {
 ipcMain.handle('load-workshop-map', async (_, { zipFileName, targetMapFile }) => {
   try {
     const AdmZip      = require('adm-zip');
-    const workshopDir = path.join(app.getAppPath(), 'FilesChanges', 'Workshop', 'Enable');
-    const disableDir  = path.join(app.getAppPath(), 'FilesChanges', 'Workshop', 'Disable');
+    const workshopDir = getWorkshopEnableDir();
+    const disableDir  = getWorkshopDisableDir();
     const zipPath     = path.join(workshopDir, zipFileName);
     const cookedDir   = findRLCookedDir();
     if (!cookedDir) return { success: false, error: 'Rocket League not found' };
-
-    if (!fs.existsSync(disableDir)) fs.mkdirSync(disableDir, { recursive: true });
 
     // Backup original RL map before overwriting
     const originalMapPath = path.join(cookedDir, targetMapFile);
     const backupPath      = path.join(disableDir, targetMapFile);
     if (fs.existsSync(originalMapPath) && !fs.existsSync(backupPath)) {
-      fs.copyFileSync(originalMapPath, backupPath);
+      fs.writeFileSync(backupPath, fs.readFileSync(originalMapPath));
     }
 
     // Extract workshop .udk from zip and overwrite the RL map
@@ -730,11 +781,11 @@ ipcMain.handle('revert-workshop-map', async (_, { zipFileName }) => {
 
     // Restore from local backup in Disable/
     const backupPath = record.backupPath
-      || path.join(app.getAppPath(), 'FilesChanges', 'Workshop', 'Disable', record.targetMapFile);
+      || path.join(getWorkshopDisableDir(), record.targetMapFile);
 
     if (!fs.existsSync(backupPath)) return { success: false, error: 'Backup not found in Disable folder' };
 
-    fs.copyFileSync(backupPath, path.join(cookedDir, record.targetMapFile));
+    fs.writeFileSync(path.join(cookedDir, record.targetMapFile), fs.readFileSync(backupPath));
     fs.unlinkSync(backupPath);
 
     delete installs[zipFileName];
@@ -776,10 +827,10 @@ ipcMain.on('revert-all-workshop-maps', async (event) => {
       if (!targetMapFile) continue;
 
       const backupPath = record.backupPath
-        || path.join(app.getAppPath(), 'FilesChanges', 'Workshop', 'Disable', targetMapFile);
+        || path.join(getWorkshopDisableDir(), targetMapFile);
 
       if (fs.existsSync(backupPath)) {
-        fs.copyFileSync(backupPath, path.join(cookedDir, targetMapFile));
+        fs.writeFileSync(path.join(cookedDir, targetMapFile), fs.readFileSync(backupPath));
         fs.unlinkSync(backupPath);
       }
       delete installs[zipFileName];
@@ -811,7 +862,7 @@ ipcMain.on('revert-all-workshop-maps', async (event) => {
 
 ipcMain.handle('get-installed-maps', async () => {
   try {
-    const workshopDir = path.join(app.getAppPath(), 'FilesChanges', 'Workshop', 'Enable');
+    const workshopDir = getWorkshopEnableDir();
     if (!fs.existsSync(workshopDir)) return { maps: [] };
 
     const installs = readInstalls();

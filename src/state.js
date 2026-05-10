@@ -71,6 +71,10 @@ let playerWon       = null;
 let lastTimeSeconds = null;
 let lastBOvertime   = null;
 
+// ─── Custom RL Path ───────────────────────────────────────────────────────────
+
+let customCookedPath = null;
+
 // ─── Alt Key ──────────────────────────────────────────────────────────────────
 
 let altKeyProcess = null;
@@ -153,6 +157,8 @@ module.exports = {
   set lastTimeSeconds(v)      { lastTimeSeconds = v; },
   get lastBOvertime()         { return lastBOvertime; },
   set lastBOvertime(v)        { lastBOvertime = v; },
+  get customCookedPath()      { return customCookedPath; },
+  set customCookedPath(v)     { customCookedPath = v; },
   get altKeyProcess()         { return altKeyProcess; },
   set altKeyProcess(v)        { altKeyProcess = v; },
   get altIsHeld()             { return altIsHeld; },

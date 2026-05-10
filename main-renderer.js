@@ -368,6 +368,7 @@ function switchTab(name) {
     workshopLoaded = true;
     loadBakkesmaps(1, '');
   }
+  if (name === 'settings') loadSettingsTab();
 }
 
 function switchCarDesignTab(name) {
@@ -1612,4 +1613,46 @@ function applyManualSeries() {
   const blue   = parseInt(document.getElementById('manualSeriesBlue').value)   || 0;
   const orange = parseInt(document.getElementById('manualSeriesOrange').value) || 0;
   ipcRenderer.send('manual-series', { blue, orange });
+}
+
+// ── Settings Tab ──────────────────────────────────────────────────────────────
+
+async function loadSettingsTab() {
+  const res = await ipcRenderer.invoke('get-cooked-path');
+  const detectedEl = document.getElementById('settingsDetectedPath');
+  const input      = document.getElementById('settingsCookedInput');
+  const status     = document.getElementById('settingsPathStatus');
+
+  detectedEl.textContent = res.autoDetected || 'Non détecté';
+  input.value            = res.custom || res.autoDetected || '';
+  status.textContent     = res.active
+    ? (res.custom ? '✓ Chemin personnalisé actif' : '✓ Détection automatique active')
+    : '⚠ Aucun chemin trouvé';
+  status.className = 'path-status ' + (res.active ? 'ok' : 'err');
+}
+
+async function applyCookedPath() {
+  const input  = document.getElementById('settingsCookedInput');
+  const status = document.getElementById('settingsPathStatus');
+  const val    = input.value.trim();
+
+  status.textContent = '…';
+  status.className   = 'path-status info';
+
+  const res = await ipcRenderer.invoke('set-cooked-path', { cookedPath: val });
+  if (res.success) {
+    status.textContent = res.cleared
+      ? '✓ Réinitialisé — détection automatique active'
+      : '✓ Chemin sauvegardé';
+    status.className = 'path-status ok';
+    if (res.active) input.value = res.active;
+  } else {
+    status.textContent = '✗ ' + res.error;
+    status.className   = 'path-status err';
+  }
+}
+
+async function resetCookedPath() {
+  document.getElementById('settingsCookedInput').value = '';
+  await applyCookedPath();
 }

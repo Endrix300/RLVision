@@ -161,6 +161,46 @@
     /* Preset & Workshop délèguent le scroll à leurs enfants */
     #tab-cardesign, #tab-workshop { padding: 0; gap: 0; }
 
+    /* Settings same scroll pattern as User */
+    #tab-settings { overflow-y: auto !important; padding: 16px; gap: 12px; }
+    #tab-settings > * { flex-shrink: 0; }
+
+    .path-input-row {
+      display: flex;
+      gap: 8px;
+      align-items: stretch;
+    }
+
+    .path-input-row input {
+      flex: 1;
+      font-size: 11px;
+      font-family: 'Consolas', 'Courier New', monospace;
+    }
+
+    .path-status {
+      font-size: 11px;
+      font-weight: 600;
+      margin-top: 8px;
+      min-height: 16px;
+      transition: color 0.2s;
+    }
+
+    .path-status.ok   { color: var(--green); }
+    .path-status.err  { color: var(--red); }
+    .path-status.info { color: var(--text2); }
+
+    .detected-path {
+      font-size: 11px;
+      color: var(--text3);
+      font-family: 'Consolas', 'Courier New', monospace;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 10px;
+      word-break: break-all;
+      margin-bottom: 10px;
+    }
+
     /* ════════════════════════════ MMR CARD ══════════════════════════════════ */
     .mmr-card {
       background: linear-gradient(135deg, #1a2744 0%, #0d1a30 100%);
@@ -817,6 +857,7 @@
   <button class="tab-btn"        id="tab-cardesign-btn"  onclick="switchTab('cardesign')">Preset</button>
   <button class="tab-btn"        id="tab-production-btn" onclick="switchTab('production')">Production</button>
   <button class="tab-btn"        id="tab-workshop-btn"   onclick="switchTab('workshop')">Workshop</button>
+  <button class="tab-btn"        id="tab-settings-btn"   onclick="switchTab('settings')">Settings</button>
 </div>
 
 <!-- ════════════════════════════ PANEL: USER ═════════════════════════════════ -->
@@ -1231,6 +1272,29 @@
     <div class="hint-sm" id="playActionsStatus"></div>
     <div id="play-status" class="ws-empty">Loading...</div>
     <div class="map-grid" id="play-grid"></div>
+  </div>
+
+</div>
+
+<!-- ════════════════════════════ PANEL: SETTINGS ════════════════════════════ -->
+<div class="tab-panel" id="tab-settings">
+
+  <div class="section">
+    <div class="section-head">
+      <div class="section-head-icon">🎮</div>
+      <div class="section-title">Rocket League — Cooked Path</div>
+    </div>
+    <div class="section-body">
+      <label class="field-label">Chemin détecté automatiquement</label>
+      <div class="detected-path" id="settingsDetectedPath">—</div>
+      <label class="field-label">Chemin personnalisé</label>
+      <div class="path-input-row">
+        <input type="text" id="settingsCookedInput" placeholder="C:\Program Files\...\CookedPCConsole" />
+        <button class="btn btn-primary" onclick="applyCookedPath()">Apply</button>
+        <button class="btn btn-ghost"   onclick="resetCookedPath()"  title="Revenir à la détection auto">↺</button>
+      </div>
+      <div class="path-status info" id="settingsPathStatus"></div>
+    </div>
   </div>
 
 </div>
